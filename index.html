@@ -1,410 +1,457 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="manifest" href="manifest.json">
-<title>Life Manager</title>
-<style>
-:root {
-    --bg: #f5f5f5; --card: #fff; --text: #333; --border: #ccc; --li: #eee; --primary: #4CAF50; --accent: #2196F3; --warn: #FF9800;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Attendance Tracker Pro</title>
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+    <script src="face-api.min.js"></script>
+    
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
+        
+        .video-container { 
+            position: relative; width: 320px; height: 200px; margin: 0 auto 20px auto; 
+            background: #000; border-radius: 12px; display: flex; align-items: center; 
+            justify-content: center; overflow: hidden; border: 2px solid #334155;
+        }
+        video { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
+        
+        #capture-overlay { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(34, 197, 94, 0.9); color: white; padding: 12px 20px;
+            border-radius: 8px; font-weight: bold; display: none; z-index: 10; font-size: 16px;
+        }
+        
+        #capture-overlay { 
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    background: rgba(34, 197, 94, 0.9); 
+    color: white; 
+    padding: 20px;
+    border-radius: 12px; 
+    font-weight: bold; 
+    display: none; 
+    z-index: 10; 
+    min-width: 180px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    border: 2px solid rgba(255,255,255,0.2);
+    transition: opacity 0.3s ease;
 }
-[data-theme="dark"] {
-    --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --border: #333; --li: #2d2d2d; --primary: #66bb6a; --accent: #64b5f6;
+
+/* Custom Alert Styles */
+.custom-alert-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85); display: none; align-items: center;
+    justify-content: center; z-index: 9999; backdrop-filter: blur(4px);
 }
-body{font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); padding:10px; margin:0; transition: 0.3s;}
-
-.top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
-#topBar{margin-bottom:15px; background:var(--card); padding:15px; border-radius:12px; border: 1px solid var(--border);}
-.failed { background: #f44336; color: white; }
-
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
+.custom-alert-box {
+    background: #1e293b; border: 1px solid #334155; padding: 25px;
+    border-radius: 15px; width: 90%; max-width: 350px; text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
 }
+.custom-alert-box h3 { margin-top: 0; color: #3b82f6; }
+.custom-alert-box p { color: #94a3b8; margin-bottom: 20px; }
+.custom-alert-input { margin-bottom: 15px !important; }
 
-.action-card {
-    background: var(--card);
-    padding: 15px 5px;
-    border-radius: 12px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    cursor: pointer;
-    border: 1px solid var(--border);
-}
-.action-card:active { transform: scale(0.95); background: var(--li); }
-.action-card span { font-size: 24px; display: block; margin-bottom: 5px; }
+        .card { 
+            background: #1e293b; padding: 24px; border-radius: 15px; 
+            max-width: 400px; margin: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .button-group { display: flex; gap: 10px; margin-top: 10px; }
+        
+        button { 
+            background: #3b82f6; color: white; border: none; padding: 12px; 
+            border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; 
+            transition: 0.2s; font-size: 14px;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
 
-.view-screen { display: none; background:var(--bg); min-height: 100vh; }
-section{background:var(--card); padding:15px; border-radius:12px; border: 1px solid var(--border); margin-top: 10px;}
+        .btn-secondary { background: #475569; }
+        .btn-sleep { background: #ef4444; }
+        .btn-wake { background: #22c55e; }
+        .btn-settings { position: absolute; top: 10px; right: 10px; width: 35px; height: 35px; padding: 0; background: #334155; border-radius: 50%; border:none; cursor:pointer;}
+        
+        input { 
+            width: 100%; box-sizing: border-box; padding: 12px; 
+            margin-bottom: 15px; border-radius: 8px; border: 1px solid #334155; 
+            background: #0f172a; color: white; text-align: center;
+        }
+        
+        #status { font-size: 13px; margin-bottom: 15px; color: #94a3b8; }
 
-button{cursor:pointer; background:var(--primary); color:white; border:none; font-weight:bold; padding:12px; border-radius:8px; width:100%; margin: 5px 0;}
-.back-btn { background: #f44336; margin-bottom: 15px; }
-
-input, select, textarea { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); box-sizing: border-box; font-size: 16px; font-family: inherit; }
-
-table{width:100%; border-collapse:collapse; margin-top:10px; font-size: 0.85em;}
-th,td{border:1px solid var(--border); padding:10px; text-align:center}
-th{background:var(--primary); color:#fff}
-
-.summary-box { display: flex; justify-content: space-around; background: var(--li); padding: 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; border: 1px solid var(--border); }
-#login{position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:999}
-
-.modal{position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:none; justify-content:center; align-items:center; z-index:1000}
-.modalContent{background:var(--card); padding:20px; border-radius:15px; width:95%; max-width:450px; box-sizing: border-box; overflow-y: auto; max-height: 90vh;}
-.cat-tag { font-size: 0.7em; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
-.status-pill { font-size: 0.75em; padding: 4px 8px; border-radius: 20px; font-weight: bold; }
-.achieved { background: #4CAF50; color: white; }
-.pending { background: #FF9800; color: white; }
-
-.backup-zone { background: var(--li); padding: 10px; border-radius: 8px; border: 1px dashed var(--border); margin-top: 15px; }
-</style>
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; }
+        .modal-content { background: #1e293b; margin: 5% auto; padding: 20px; width: 90%; max-width: 450px; border-radius: 15px; text-align: left; }
+        .record-list { height: 300px; overflow-y: auto; background: #0f172a; padding: 10px; border-radius: 8px; margin: 15px 0; border: 1px solid #334155; }
+        .record-item { border-bottom: 1px solid #334155; padding: 10px 5px; display: flex; justify-content: space-between; font-size: 14px; }
+        
+        .search-box { display: flex; gap: 5px; margin-bottom: 10px; }
+        .search-box input { margin-bottom: 0; text-align: left; }
+    </style>
 </head>
 <body>
 
-<div id="login">
-    <section style="width: 300px; text-align: center; border:none;">
-        <h2 style="margin-bottom:20px;">MY LIFE MANAGER</h2>
-        <input id="loginPass" type="password" placeholder="Password" autofocus>
-        <button onclick="doLogin()">Enter App</button>
-    </section>
-</div>
-
-<div id="app" style="display:none">
-    <div id="mainDashboard">
-        <div id="topBar">
-            <div class="top-row">
-                <button onclick="toggleTheme()" style="width:auto; background:#9C27B0; padding:8px 15px; margin:0;">🌓 Theme</button>
-                <button onclick="doLogout()" style="width:auto; background:#f44336; padding:8px 15px; margin:0;">Exit</button>
-            </div>
-            <div style="text-align: center;">
-                <strong id="dispName" style="font-size: 1.3em; color: var(--primary);">My Life Manager</strong>
-            </div>
-        </div>
-
-        <div class="dashboard-grid">
-            <div class="action-card" onclick="openEntryModal('income')" style="border-top: 4px solid #4CAF50;">
-                <span>💰</span><b>Record Income</b>
-            </div>
-            <div class="action-card" onclick="openEntryModal('expense')" style="border-top: 4px solid #F44336;">
-                <span>💸</span><b>Record Expenses</b>
-            </div>
-            <div class="action-card" onclick="openTaskModal()" style="border-top: 4px solid #FF9800;">
-                <span>📝</span><b>Record To-Do</b>
-            </div>
-            <div class="action-card" onclick="openTargetModal()" style="border-top: 4px solid #00BCD4;">
-                <span>🎯</span><b>Annual Target</b>
-            </div>
-            <div class="action-card" onclick="showYearlyReport()" style="border-top: 4px solid #2196F3;">
-                <span>📊</span><b>Report</b>
-            </div>
-            <div class="action-card" onclick="openModal('settingsModal')" style="border-top: 4px solid #607D8B;">
-                <span>⚙️</span><b>Settings</b>
-            </div>
-        </div>
-
-        <div class="summary-box">
-            <div style="color:green;">+ <span id="totalInc">0</span></div>
-            <div style="color:red;">- <span id="totalExp">0</span></div>
-            <div style="border-left: 2px solid var(--border); padding-left: 10px;">Bal: <span id="totalBal">0</span></div>
-        </div>
-
-        <button onclick="switchView('taskView')" style="background:var(--accent)">📋 Open Tasks</button>
-        <button onclick="switchView('targetView')" style="background:#0097A7">🎯 Annual Targets</button>
-        <button onclick="switchView('cashView')" style="background:var(--accent)">📖 View My Finances</button>
-    </div>
-
-    <div id="taskView" class="view-screen">
-        <button class="back-btn" onclick="switchView('mainDashboard')">Back to Dashboard</button>
-        <section><h3>My Tasks</h3><ul id="taskList" style="list-style:none; padding:0;"></ul></section>
-    </div>
-
-    <div id="targetView" class="view-screen">
-        <button class="back-btn" onclick="switchView('mainDashboard')"> Back to Dashboard</button>
-        <section><h3>Annual Targets</h3><ul id="targetList" style="list-style:none; padding:0;"></ul></section>
-    </div>
-
-    <div id="cashView" class="view-screen">
-        <button class="back-btn" onclick="switchView('mainDashboard')"> Back to Dashboard</button>
-        <section>
-            <h3>Finance Ledger (<span id="ledgerYearLabel"></span>) </h3>
-            <div style="overflow-x:auto;">
-                <table>
-                    <thead><tr><th>Date</th><th>Details</th><th>Amt</th><th>✖</th></tr></thead>
-                    <tbody id="cashRows"></tbody>
-                </table>
-            </div>
-        </section>
-    </div>
-</div>
-
-<div class="modal" id="entryModal"><div class="modalContent">
-    <h3 id="entryTitle">Add Entry</h3>
-    <input id="entDesc" placeholder="Description?">
-    <input id="entAmt" type="number" placeholder="Amount">
-    <select id="entCat">
-        <option value="General">General</option>
-        <option value="Bills">Bills</option>
-        <option value="Personal">Personal</option>
-    </select>
-    <input type="hidden" id="entType">
-    <button onclick="submitEntry()">Add to Record</button>
-    <button onclick="closeModal('entryModal')" style="background:#636e72">Cancel</button>
-</div></div>
-
-<div class="modal" id="taskModal"><div class="modalContent">
-    <h3>New Task</h3>
-    <input id="taskInTitle" placeholder="Task Name">
-    <select id="taskInCat"><option value="General">General</option></select>
-    <textarea id="taskInNotes" placeholder="Notes..." rows="2"></textarea>
-    <button onclick="submitTask()" style="background:var(--warn)">Save Task</button>
-    <button onclick="closeModal('taskModal')" style="background:#636e72">Cancel</button>
-</div></div>
-
-<div class="modal" id="targetModal"><div class="modalContent">
-    <h3>New Target</h3>
-    <input id="targetInTitle" placeholder="Target Name">
-    <button onclick="submitTarget()" style="background:#00BCD4">Add Target</button>
-    <button onclick="closeModal('targetModal')" style="background:#636e72">Cancel</button>
-</div></div>
-
-<div class="modal" id="settingsModal"><div class="modalContent">
-    <h3>Profile Settings</h3>
-    <label>User Name:</label>
-    <input id="setBizName" placeholder="Your Name">
-    <label>Change Password:</label>
-    <input id="newPass" type="password" placeholder="New Password">
-    <button onclick="saveSettings()">Apply Changes</button>
+    <h2 id="displayCompanyName" style="margin-bottom: 20px; color: #3b82f6;">AI Attendance System</h2>
     
-    <div class="backup-zone">
-        <h4>Data Management</h4>
-        <p style="font-size: 0.8em; margin-bottom: 10px;">Keep your data safe by downloading a backup file.</p>
-        <button onclick="exportData()" style="background: #607D8B;">💾 Backup to File</button>
-        
-        <hr style="margin: 15px 0; border: 0.5px solid var(--border);">
-        
-        <label style="font-size: 0.8em;">Restore from backup:</label>
-        <input type="file" id="importFile" accept=".json" style="font-size: 0.7em; padding: 5px;">
-        <button onclick="importData()" style="background: var(--warn);">📥 Restore Data</button>
+    <div class="video-container">
+        <video id="video" autoplay muted playsinline></video>
+        <div id="sleep-msg" style="display:none; color: #64748b; font-weight: bold;">[ CAMERA OFF ]</div>
+        <div id="capture-overlay">FACE CAPTURED</div>
     </div>
     
-    <button onclick="closeModal('settingsModal')" style="background:#636e72; margin-top: 15px;">Close</button>
-</div></div>
+    <div class="card">
+        <button class="btn-settings" onclick="openSettings()">⚙️</button>
+        <div id="status">Waking up AI...</div>
+        
+        <button id="toggleBtn" class="btn-sleep" onclick="toggleCamera()">Sleep Camera</button>
+        
+        <div style="margin: 20px 0; border-top: 1px solid #334155;"></div>
+        
+        <input type="text" id="nameInput" placeholder="Enter name to register">
+        
+        <div class="button-group">
+            <button onclick="registerFace()">Register Face</button>
+            <button class="btn-secondary" onclick="openAttendanceWithAuth()">Attendance</button>
+        </div>
+    </div>
 
-<div class="modal" id="reportModal"><div class="modalContent" style="max-width: 95%;">
-    <h3>Report Analysis</h3>
-    <select id="reportYearSelect" onchange="updateReportChart()"></select>
-    <div style="height: 250px; margin-top:15px;"><canvas id="reportChart"></canvas></div>
-    <button onclick="closeModal('reportModal')" style="background:#f44336; margin-top:15px;">Close</button>
-</div></div>
+    <div id="recordsModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0">Attendance Database</h3>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search person's name...">
+                <button style="width: 80px;" onclick="searchPerson()">Search</button>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label style="font-size: 12px; color: #94a3b8;">Filter by Date:</label>
+                <button style="width: auto; padding: 4px 10px; font-size: 11px;" onclick="loadAttendance()">Show All Today</button>
+            </div>
+            <input type="date" id="dateFilter" onchange="loadAttendance()" style="margin-top:5px;">
+            <div class="record-list" id="modalLogs"></div>
+            <button class="btn-secondary" onclick="closeModal('recordsModal')">Close</button>
+        </div>
+    </div>
 
-<script src="chart.js"></script>
-<script src="dexie.js"></script>
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0">System Settings</h3>
+            <label>Company Name</label>
+            <input type="text" id="setCompanyName" placeholder="e.g. Acme Corp">
+            <label>Access Password</label>
+            <input type="password" id="setPass" placeholder="New Password">
+            <button onclick="saveSettings()">Save & Close</button>
+            <button class="btn-secondary" style="margin-top:10px" onclick="closeModal('settingsModal')">Cancel</button>
+        </div>
+    </div>
 
-<script>
-const db = new Dexie("LifeManagerDB");
-db.version(1).stores({
-    tasks: '++id, date, completed',
-    entries: '++id, d, t',
-    targets: '++id, date, status',
-    config: 'key'
-});
-
-let settings = {name:"My Life Manager"};
-let security = {p:"1234"};
-let myChart = null;
-const currentYear = new Date().getFullYear();
-
-async function initApp() {
-    try {
-        const s = await db.config.get('settings');
-        const sec = await db.config.get('security');
-        if(s) settings = s.val;
-        if(sec) security = sec.val;
-        applySettingsUI();
-        initReportYears();
-    } catch(e) { console.error("DB Init failed", e); }
-}
-
-// --- BACKUP & RESTORE LOGIC ---
-
-async function exportData() {
-    const allTasks = await db.tasks.toArray();
-    const allEntries = await db.entries.toArray();
-    const allTargets = await db.targets.toArray();
-    const allConfig = await db.config.toArray();
-
-    const backupData = {
-        tasks: allTasks,
-        entries: allEntries,
-        targets: allTargets,
-        config: allConfig,
-        version: 1,
-        date: new Date().toISOString()
-    };
-
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `lifemanager_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-async function importData() {
-    const fileInput = document.getElementById('importFile');
-    if (!fileInput.files[0]) return alert("Please select a backup file first.");
-
-    if (!confirm("This will overwrite your current data. Are you sure?")) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            
-            // Clear current data
-            await db.tasks.clear();
-            await db.entries.clear();
-            await db.targets.clear();
-            await db.config.clear();
-
-            // Import new data
-            if(data.tasks) await db.tasks.bulkAdd(data.tasks);
-            if(data.entries) await db.entries.bulkAdd(data.entries);
-            if(data.targets) await db.targets.bulkAdd(data.targets);
-            if(data.config) await db.config.bulkAdd(data.config);
-
-            alert("Restore Successful! The app will now reload.");
-            location.reload();
-        } catch (err) {
-            alert("Error importing data. Make sure it's a valid backup file.");
-            console.error(err);
+    <script>
+        // --- 1. OFFLINE SERVICE WORKER REGISTRATION ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log("Offline Mode Active"))
+                    .catch(err => console.log("Offline Sync Failed", err));
+            });
         }
-    };
-    reader.readAsText(fileInput.files[0]);
+
+        const video = document.getElementById('video');
+        const statusText = document.getElementById('status');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const sleepMsg = document.getElementById('sleep-msg');
+        const captureOverlay = document.getElementById('capture-overlay');
+        const modalLogs = document.getElementById('modalLogs');
+        
+        let db;
+        let registeredFaces = [];
+        let isSleeping = false;
+        let scanInterval;
+
+        async function init() {
+            const savedName = localStorage.getItem('companyName') || "AI Attendance System";
+            document.getElementById('displayCompanyName').innerText = savedName;
+            document.getElementById('setCompanyName').value = savedName;
+
+            const request = indexedDB.open("FaceTrackerDB", 2);
+            request.onupgradeneeded = (e) => {
+                db = e.target.result;
+                if(!db.objectStoreNames.contains("members")) db.createObjectStore("members", { keyPath: "name" });
+                if(!db.objectStoreNames.contains("attendance")) db.createObjectStore("attendance", { autoIncrement: true });
+            };
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                loadModelsAndData();
+            };
+        }
+
+        async function loadModelsAndData() {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+            try {
+                statusText.innerText = "Initializing AI Models...";
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+                await loadFacesFromDB();
+                statusText.innerText = "System Ready.";
+                startCamera();
+            } catch (err) { statusText.innerText = "Load Error: " + err.message; }
+        }
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: {} }).then(stream => { 
+                video.srcObject = stream;
+                video.style.display = "block";
+                sleepMsg.style.display = "none";
+                statusText.innerText = "Scanning for faces...";
+                if (scanInterval) clearInterval(scanInterval);
+                scanInterval = setInterval(scanFace, 2000); 
+            }).catch(err => { statusText.innerText = "Camera Access Denied"; });
+        }
+
+        function stopCamera() {
+            const stream = video.srcObject;
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            video.srcObject = null;
+            video.style.display = "none";
+            sleepMsg.style.display = "block";
+            clearInterval(scanInterval);
+            statusText.innerText = "Camera is OFF";
+        }
+
+        function toggleCamera() {
+            isSleeping ? startCamera() : stopCamera();
+            toggleBtn.innerText = isSleeping ? "Sleep Camera" : "Wake Camera";
+            toggleBtn.className = isSleeping ? "btn-sleep" : "btn-wake";
+            isSleeping = !isSleeping;
+        }
+
+        async function loadFacesFromDB() {
+            const tx = db.transaction("members", "readonly");
+            const members = await new Promise(r => tx.objectStore("members").getAll().onsuccess = e => r(e.target.result));
+            registeredFaces = members.map(m => new faceapi.LabeledFaceDescriptors(m.name, [new Float32Array(m.descriptor)]));
+        }
+
+        
+        async function scanFace() {
+            if (registeredFaces.length === 0 || isSleeping) return;
+            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+
+            if (detection) {
+                const faceMatcher = new faceapi.FaceMatcher(registeredFaces, 0.55);
+                const match = faceMatcher.findBestMatch(detection.descriptor);
+
+                if (match.label !== 'unknown') {
+                    clearInterval(scanInterval); 
+                    showCapturedUI(match.label);
+                    saveAttendance(match.label);
+                    setTimeout(() => { if (!isSleeping) scanInterval = setInterval(scanFace, 2000); }, 5000);
+                }
+            }
+        }
+
+        function showCapturedUI(name) {
+            captureOverlay.innerText = "VERIFIED: " + name.toUpperCase();
+            captureOverlay.style.background = "rgba(59, 130, 246, 0.9)";
+            captureOverlay.style.display = "block";
+            setTimeout(() => { 
+                captureOverlay.style.display = "none"; 
+                captureOverlay.innerText = "FACE CAPTURED"; 
+            }, 3000);
+        }
+
+        function saveAttendance(name) {
+            const now = new Date();
+            const dateKey = now.toISOString().split('T')[0];
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const lastLog = localStorage.getItem('last_log_' + name);
+            if (lastLog && (now - new Date(lastLog)) < 5000) return; 
+
+            const tx = db.transaction("attendance", "readwrite");
+            tx.objectStore("attendance").add({ name, date: dateKey, time: timeStr, timestamp: now });
+            tx.oncomplete = () => {
+                localStorage.setItem('last_log_' + name, now);
+                statusText.innerHTML = `✅ Recognized: <b>${name}</b> at ${timeStr}`;
+            };
+        }
+
+        // --- Custom Alert Logic ---
+function showAlert(message, title = "System Notification", type = "alert") {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customAlert');
+        const titleEl = document.getElementById('alertTitle');
+        const msgEl = document.getElementById('alertMessage');
+        const inputContainer = document.getElementById('alertInputContainer');
+        const inputField = document.getElementById('alertInput');
+        const confirmBtn = document.getElementById('alertConfirmBtn');
+        const cancelBtn = document.getElementById('alertCancelBtn');
+
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+        inputContainer.style.display = type === "prompt" ? "block" : "none";
+        cancelBtn.style.display = type === "prompt" ? "block" : "none";
+        inputField.value = "";
+        overlay.style.display = "flex";
+
+        confirmBtn.onclick = () => {
+            overlay.style.display = "none";
+            resolve(type === "prompt" ? inputField.value : true);
+        };
+        cancelBtn.onclick = () => {
+            overlay.style.display = "none";
+            resolve(null);
+        };
+    });
 }
 
-// --- Existing Functions ---
+// --- UPDATED FUNCTIONS TO USE CUSTOM ALERT ---
 
-function initReportYears() {
-    const sel = document.getElementById('reportYearSelect');
-    let options = "";
-    for(let i = 2024; i <= 2060; i++) {
-        options += `<option value="${i}" ${i === currentYear ? 'selected' : ''}>${i}</option>`;
+async function registerFace() {
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) return showAlert("Please enter a name first!");
+    
+    const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+    if (detection) {
+        const tx = db.transaction("members", "readwrite");
+        tx.objectStore("members").put({ name: name, descriptor: Array.from(detection.descriptor) });
+        tx.oncomplete = async () => { 
+            await showAlert(`Face for ${name} has been successfully registered.`, "Success!"); 
+            loadFacesFromDB(); 
+        };
+    } else { 
+        showAlert("No face detected. Please ensure you are visible in the camera.", "Detection Failed"); 
     }
-    if(sel) sel.innerHTML = options;
 }
 
-function doLogin() {
-    if(document.getElementById("loginPass").value === security.p) {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("app").style.display = "block";
-        refreshAllUI();
-    } else { alert("Access Denied"); }
+async function openAttendanceWithAuth() {
+    const pass = localStorage.getItem('sysPass') || "admin";
+    const entry = await showAlert("Enter Access Password:", "Security Check", "prompt");
+    
+    if (entry === pass) {
+        document.getElementById('recordsModal').style.display = 'block';
+        document.getElementById('dateFilter').valueAsDate = new Date();
+        loadAttendance();
+    } else if (entry !== null) { 
+        showAlert("The password you entered is incorrect.", "Access Denied"); 
+    }
 }
 
-function getToday() { return new Date().toISOString().split("T")[0]; }
-
-async function refreshAllUI() {
-    renderTasks(currentYear);
-    renderCashBook(currentYear);
-    renderTargets(currentYear);
+async function openSettings() {
+    const pass = localStorage.getItem('sysPass') || "admin";
+    const entry = await showAlert("Enter Admin Password:", "Settings Lock", "prompt");
+    if(entry === pass) document.getElementById('settingsModal').style.display = 'block';
+    else if (entry !== null) showAlert("Unauthorized access attempt.", "Denied");
 }
-
-async function submitEntry() {
-    const desc = document.getElementById("entDesc").value, amt = document.getElementById("entAmt").value;
-    if (!desc || !amt) return;
-    await db.entries.add({ d: getToday(), desc, t: document.getElementById("entType").value, a: parseFloat(amt), c: document.getElementById("entCat").value });
-    closeModal('entryModal'); renderCashBook(currentYear);
-}
-
-async function submitTask() {
-    const title = document.getElementById("taskInTitle").value;
-    if (!title) return;
-    await db.tasks.add({title, completed: false, date: getToday()});
-    closeModal('taskModal'); renderTasks(currentYear);
-}
-
-async function submitTarget() {
-    const title = document.getElementById("targetInTitle").value;
-    if (!title) return;
-    await db.targets.add({title, status: 'pending', date: getToday()});
-    closeModal('targetModal'); renderTargets(currentYear);
-}
-
-async function renderCashBook(year) {
-    const body = document.getElementById("cashRows");
-    document.getElementById('ledgerYearLabel').innerText = year;
-    let inc = 0, exp = 0;
-    const all = await db.entries.toArray();
-    body.innerHTML = all.filter(en => new Date(en.d).getFullYear() === year).map(en => {
-        const val = Number(en.a) || 0;
-        en.t === "income" ? inc += val : exp += val;
-        return `<tr><td><small>${en.d}</small></td><td>${en.desc}</td><td style="color:${en.t==='income'?'green':'red'}">${val.toLocaleString()}</td><td><button onclick="delEntry(${en.id})" style="background:red;width:auto;">X</button></td></tr>`;
-    }).reverse().join('');
-    document.getElementById("totalInc").innerText = inc.toLocaleString();
-    document.getElementById("totalExp").innerText = exp.toLocaleString();
-    document.getElementById("totalBal").innerText = (inc - exp).toLocaleString();
-}
-
-async function renderTasks(year) {
-    const list = document.getElementById("taskList");
-    const all = await db.tasks.toArray();
-    list.innerHTML = all.map(t => `<li style="background:var(--li); margin:8px 0; padding:12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="${t.completed ? 'text-decoration:line-through; opacity:0.5' : ''}">${t.title}</span>
-        <div><button onclick="toggleTask(${t.id})" style="width:auto; background:blue; padding:5px;">✓</button> <button onclick="delTask(${t.id})" style="width:auto; background:red; padding:5px;">X</button></div>
-    </li>`).join('');
-}
-
-async function renderTargets(year) {
-    const list = document.getElementById("targetList");
-    const all = await db.targets.toArray();
-    list.innerHTML = all.map(t => `<li style="background:var(--li); margin:8px 0; padding:12px; border-radius:8px;">${t.title} <span class="status-pill pending">${t.status}</span></li>`).join('');
-}
-
-async function toggleTask(id) { const t = await db.tasks.get(id); await db.tasks.update(id, {completed: !t.completed}); renderTasks(currentYear); }
-async function delTask(id) { await db.tasks.delete(id); renderTasks(currentYear); }
-async function delEntry(id) { await db.entries.delete(id); renderCashBook(currentYear); }
 
 async function saveSettings() {
-    settings.name = document.getElementById('setBizName').value;
-    const np = document.getElementById('newPass').value;
-    if(np.trim()) { security.p = np; await db.config.put({key: 'security', val: security}); }
-    await db.config.put({key: 'settings', val: settings});
-    applySettingsUI(); closeModal('settingsModal');
+    const newName = document.getElementById('setCompanyName').value;
+    const newPass = document.getElementById('setPass').value;
+    if(newName) {
+        localStorage.setItem('companyName', newName);
+        document.getElementById('displayCompanyName').innerText = newName;
+    }
+    if(newPass) localStorage.setItem('sysPass', newPass);
+    
+    await showAlert("System settings have been updated.", "Saved");
+    closeModal('settingsModal');
 }
 
-function applySettingsUI() { document.getElementById('dispName').innerText = settings.name; document.getElementById('setBizName').value = settings.name; }
-function switchView(id) { ['mainDashboard', 'taskView', 'targetView', 'cashView'].forEach(v => document.getElementById(v).style.display = (v === id) ? 'block' : 'none'); }
-function openModal(id) { document.getElementById(id).style.display = "flex"; }
-function closeModal(id) { document.getElementById(id).style.display = "none"; }
-function openEntryModal(t) { document.getElementById('entType').value = t; openModal('entryModal'); }
-function openTaskModal() { openModal('taskModal'); }
-function openTargetModal() { openModal('targetModal'); }
-function toggleTheme() { const t = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"; document.documentElement.setAttribute("data-theme", t); }
-function showYearlyReport() { openModal('reportModal'); updateReportChart(); }
-function doLogout() { location.reload(); }
+function showCapturedUI(name) {
+    // 1. Initial Display
+    captureOverlay.innerHTML = `
+        <div style="font-size: 16px; letter-spacing: 1px;">VERIFIED</div>
+        <div style="font-size: 20px; margin: 5px 0;">${name.toUpperCase()}</div>
+        <div id="countdown-wrapper" style="font-size: 12px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 5px;">
+            Next scan in <span id="timer-num">5</span>s
+        </div>
+    `;
+    
+    captureOverlay.style.background = "rgba(34, 197, 94, 0.95)";
+    captureOverlay.style.display = "block";
 
-async function updateReportChart() {
-    const year = parseInt(document.getElementById('reportYearSelect').value);
-    const ctx = document.getElementById("reportChart");
-    let incD = new Array(12).fill(0), expD = new Array(12).fill(0);
-    const all = await db.entries.toArray();
-    all.forEach(en => {
-        let dt = new Date(en.d);
-        if(dt.getFullYear() === year) {
-            let m = dt.getMonth();
-            en.t === "income" ? incD[m] += Number(en.a) : expD[m] += Number(en.a);
+    // 2. Countdown Logic
+    let timeLeft = 5;
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        const timerNum = document.getElementById('timer-num');
+        if (timerNum) {
+            timerNum.innerText = timeLeft;
         }
-    });
-    if(myChart) myChart.destroy();
-    myChart = new Chart(ctx, { type: 'bar', data: { labels: ["J","F","M","A","M","J","J","A","S","O","N","D"], datasets: [{ label: 'In', data: incD, backgroundColor: '#4CAF50' }, { label: 'Out', data: expD, backgroundColor: '#f44336' }] }, options: { responsive: true, maintainAspectRatio: false } });
+        
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            captureOverlay.style.display = "none";
+        }
+    }, 1000);
 }
 
-initApp();
-</script>
+
+        async function searchPerson() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            if(!query) return alert("Enter a name to search");
+            modalLogs.innerHTML = "Searching...";
+            const tx = db.transaction("attendance", "readonly");
+            const records = await new Promise(r => tx.objectStore("attendance").getAll().onsuccess = e => r(e.target.result));
+            const filtered = records.filter(r => r.name.toLowerCase().includes(query));
+            renderList(filtered, `No results for: ${query}`);
+        }
+
+        async function loadAttendance() {
+            const date = document.getElementById('dateFilter').value;
+            const tx = db.transaction("attendance", "readonly");
+            const records = await new Promise(r => tx.objectStore("attendance").getAll().onsuccess = e => r(e.target.result));
+            const filtered = records.filter(r => r.date === date);
+            renderList(filtered);
+        }
+
+        function renderList(data, emptyMsg = "No records found") {
+            modalLogs.innerHTML = "";
+            if (data.length === 0) {
+                modalLogs.innerHTML = `<div style='color:gray; text-align:center; padding:20px;'>${emptyMsg}</div>`;
+                return;
+            }
+            data.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            data.forEach(r => {
+                const div = document.createElement('div');
+                div.className = "record-item";
+                div.innerHTML = `<span>👤 ${r.name} <small style="color:gray">(${r.date})</small></span> <span>🕒 ${r.time}</span>`;
+                modalLogs.appendChild(div);
+            });
+        }
+
+        
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        init();
+        
+    </script>
+    <script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker registered!'))
+      .catch(err => console.log('Registration failed: ', err));
+  });
+}
+    </script>
+    <div id="customAlert" class="custom-alert-overlay">
+    <div class="custom-alert-box">
+        <h3 id="alertTitle">Notification</h3>
+        <p id="alertMessage"></p>
+        <div id="alertInputContainer" style="display: none;">
+            <input type="password" id="alertInput" placeholder="Enter here...">
+        </div>
+        <div class="button-group">
+            <button id="alertConfirmBtn">OK</button>
+            <button id="alertCancelBtn" class="btn-secondary" style="display: none;">Cancel</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
