@@ -18,43 +18,50 @@
         video { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
         
         #capture-overlay { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(34, 197, 94, 0.9); color: white; padding: 12px 20px;
-            border-radius: 8px; font-weight: bold; display: none; z-index: 10; font-size: 16px;
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            background: rgba(34, 197, 94, 0.9); 
+            color: white; 
+            padding: 20px;
+            border-radius: 12px; 
+            font-weight: bold; 
+            display: none; 
+            z-index: 10; 
+            min-width: 180px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            border: 2px solid rgba(255,255,255,0.2);
+            transition: opacity 0.3s ease;
         }
-        
-        #capture-overlay { 
-    position: absolute; 
-    top: 50%; 
-    left: 50%; 
-    transform: translate(-50%, -50%);
-    background: rgba(34, 197, 94, 0.9); 
-    color: white; 
-    padding: 20px;
-    border-radius: 12px; 
-    font-weight: bold; 
-    display: none; 
-    z-index: 10; 
-    min-width: 180px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-    border: 2px solid rgba(255,255,255,0.2);
-    transition: opacity 0.3s ease;
-}
 
-/* Custom Alert Styles */
-.custom-alert-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); display: none; align-items: center;
-    justify-content: center; z-index: 9999; backdrop-filter: blur(4px);
-}
-.custom-alert-box {
-    background: #1e293b; border: 1px solid #334155; padding: 25px;
-    border-radius: 15px; width: 90%; max-width: 350px; text-align: center;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-}
-.custom-alert-box h3 { margin-top: 0; color: #3b82f6; }
-.custom-alert-box p { color: #94a3b8; margin-bottom: 20px; }
-.custom-alert-input { margin-bottom: 15px !important; }
+        /* Mode Switcher Styles */
+        .mode-container {
+            display: flex; background: #0f172a; padding: 5px; border-radius: 10px;
+            margin-bottom: 15px; border: 1px solid #334155; gap: 5px;
+        }
+        .mode-btn {
+            flex: 1; padding: 10px; border-radius: 8px; border: none;
+            color: #94a3b8; background: transparent; cursor: pointer;
+            font-weight: bold; transition: 0.3s; font-size: 12px;
+        }
+        .mode-btn.active-entry { background: #22c55e; color: white; }
+        .mode-btn.active-exit { background: #ef4444; color: white; }
+
+        /* Custom Alert Styles */
+        .custom-alert-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); display: none; align-items: center;
+            justify-content: center; z-index: 9999; backdrop-filter: blur(4px);
+        }
+        .custom-alert-box {
+            background: #1e293b; border: 1px solid #334155; padding: 25px;
+            border-radius: 15px; width: 90%; max-width: 350px; text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .custom-alert-box h3 { margin-top: 0; color: #3b82f6; }
+        .custom-alert-box p { color: #94a3b8; margin-bottom: 20px; }
+        .custom-alert-input { margin-bottom: 15px !important; }
 
         .card { 
             background: #1e293b; padding: 24px; border-radius: 15px; 
@@ -91,9 +98,41 @@
         
         .search-box { display: flex; gap: 5px; margin-bottom: 10px; }
         .search-box input { margin-bottom: 0; text-align: left; }
+
+        /* TRIAL STYLES */
+        #trialBadge {
+            position: fixed; top: 10px; left: 10px; background: #FF9800; color: white; 
+            padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; 
+            z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: none;
+        }
+        #expiryLock {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.99); z-index: 20000; display: none; 
+            flex-direction: column; justify-content: center; align-items: center; 
+            color: white; text-align: center; backdrop-filter: blur(8px);
+        }
+        .lock-card {
+            background: #1e293b; padding: 30px; border-radius: 15px; border: 1px solid #334155;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-width: 350px; width: 90%;
+        }
     </style>
 </head>
 <body>
+
+    <div id="trialBadge">Trial: <span id="daysLeft">--</span> days left</div>
+
+    <div id="expiryLock">
+        <div class="lock-card">
+            <h2 style="color:#ef4444; margin-top:0;">Trial Expired ⏳</h2>
+            <p style="font-size:14px; color:#94a3b8;">Your access to the AI Attendance System has expired. Please enter your activation code to continue.</p>
+            <div style="background:#0f172a; padding:10px; border-radius:8px; margin:15px 0; border:1px dashed #334155;">
+                <small style="color:#64748b;">Request ID:</small><br>
+                <strong id="userRequestID" style="color:#3b82f6; font-family:monospace; letter-spacing:1px;"></strong>
+            </div>
+            <input type="text" id="unlockCodeInput" placeholder="Enter Activation Code" style="margin-bottom:10px;">
+            <button onclick="checkUnlockCode()" style="background:#22c55e;">Activate System</button>
+        </div>
+    </div>
 
     <h2 id="displayCompanyName" style="margin-bottom: 20px; color: #3b82f6;">AI Attendance System</h2>
     
@@ -105,6 +144,12 @@
     
     <div class="card">
         <button class="btn-settings" onclick="openSettings()">⚙️</button>
+        
+        <div class="mode-container">
+            <button id="entryBtn" class="mode-btn active-entry" onclick="setMode('ENTRY')">ENTRY</button>
+            <button id="exitBtn" class="mode-btn" onclick="setMode('EXIT')">EXIT</button>
+        </div>
+
         <div id="status">Waking up AI...</div>
         
         <button id="toggleBtn" class="btn-sleep" onclick="toggleCamera()">Sleep Camera</button>
@@ -149,7 +194,10 @@
     </div>
 
     <script>
-        // --- 1. OFFLINE SERVICE WORKER REGISTRATION ---
+        // TRIAL CONFIGURATION
+        const TRIAL_DAYS = 7;
+        const ACTIVATION_CODE = "ATTEND-2026-PRO";
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -169,22 +217,88 @@
         let registeredFaces = [];
         let isSleeping = false;
         let scanInterval;
+        let currentMode = "ENTRY"; 
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('entryBtn').className = mode === 'ENTRY' ? "mode-btn active-entry" : "mode-btn";
+            document.getElementById('exitBtn').className = mode === 'EXIT' ? "mode-btn active-exit" : "mode-btn";
+            statusText.innerText = "Scanner set to: " + mode;
+        }
 
         async function init() {
             const savedName = localStorage.getItem('companyName') || "AI Attendance System";
             document.getElementById('displayCompanyName').innerText = savedName;
             document.getElementById('setCompanyName').value = savedName;
 
-            const request = indexedDB.open("FaceTrackerDB", 2);
+            // UPDATED DB SCHEMA TO INCLUDE SETTINGS
+            const request = indexedDB.open("FaceTrackerDB", 3);
             request.onupgradeneeded = (e) => {
                 db = e.target.result;
                 if(!db.objectStoreNames.contains("members")) db.createObjectStore("members", { keyPath: "name" });
                 if(!db.objectStoreNames.contains("attendance")) db.createObjectStore("attendance", { autoIncrement: true });
+                if(!db.objectStoreNames.contains("settings")) db.createObjectStore("settings", { keyPath: "key" });
             };
             request.onsuccess = (e) => {
                 db = e.target.result;
-                loadModelsAndData();
+                handleTrialSystem().then(() => {
+                    loadModelsAndData();
+                });
             };
+        }
+
+        // TRIAL LOGIC FUNCTIONS
+        async function handleTrialSystem() {
+            const getSetting = (key) => new Promise(r => {
+                const req = db.transaction("settings", "readonly").objectStore("settings").get(key);
+                req.onsuccess = () => r(req.result);
+            });
+
+            const putSetting = (key, value) => new Promise(r => {
+                const req = db.transaction("settings", "readwrite").objectStore("settings").put({ key, value });
+                req.oncomplete = () => r();
+            });
+
+            const activationRecord = await getSetting('is_activated');
+            if (activationRecord && activationRecord.value === true) return;
+
+            let installRecord = await getSetting('install_date');
+            if (!installRecord) {
+                const now = Date.now();
+                await putSetting('install_date', now);
+                installRecord = { value: now };
+            }
+
+            const expiryTime = installRecord.value + (TRIAL_DAYS * 24 * 60 * 60 * 1000);
+            const currentTime = Date.now();
+
+            if (currentTime > expiryTime) {
+                document.getElementById('expiryLock').style.display = 'flex';
+                document.getElementById('userRequestID').innerText = "AM-" + installRecord.value.toString().slice(-4);
+                stopCamera();
+            } else {
+                const diff = expiryTime - currentTime;
+                const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                const badge = document.getElementById('trialBadge');
+                badge.style.display = 'block';
+                document.getElementById('daysLeft').innerText = daysLeft;
+            }
+        }
+
+        async function checkUnlockCode() {
+            const input = document.getElementById('unlockCodeInput').value;
+            if (input === ACTIVATION_CODE) {
+                const tx = db.transaction("settings", "readwrite");
+                tx.objectStore("settings").put({ key: 'is_activated', value: true });
+                tx.oncomplete = () => {
+                    document.getElementById('expiryLock').style.display = 'none';
+                    document.getElementById('trialBadge').style.display = 'none';
+                    startCamera();
+                    showAlert("System Activated Successfully!", "Success");
+                };
+            } else {
+                showAlert("Invalid activation code.", "Error");
+            }
         }
 
         async function loadModelsAndData() {
@@ -203,11 +317,12 @@
         }
 
         function startCamera() {
+            if (document.getElementById('expiryLock').style.display === 'flex') return;
             navigator.mediaDevices.getUserMedia({ video: {} }).then(stream => { 
                 video.srcObject = stream;
                 video.style.display = "block";
                 sleepMsg.style.display = "none";
-                statusText.innerText = "Scanning for faces...";
+                statusText.innerText = "Scanning for " + currentMode + "...";
                 if (scanInterval) clearInterval(scanInterval);
                 scanInterval = setInterval(scanFace, 2000); 
             }).catch(err => { statusText.innerText = "Camera Access Denied"; });
@@ -236,7 +351,6 @@
             registeredFaces = members.map(m => new faceapi.LabeledFaceDescriptors(m.name, [new Float32Array(m.descriptor)]));
         }
 
-        
         async function scanFace() {
             if (registeredFaces.length === 0 || isSleeping) return;
             const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
@@ -255,13 +369,27 @@
         }
 
         function showCapturedUI(name) {
-            captureOverlay.innerText = "VERIFIED: " + name.toUpperCase();
-            captureOverlay.style.background = "rgba(59, 130, 246, 0.9)";
+            captureOverlay.innerHTML = `
+                <div style="font-size: 16px; letter-spacing: 1px;">${currentMode} VERIFIED</div>
+                <div style="font-size: 20px; margin: 5px 0;">${name.toUpperCase()}</div>
+                <div id="countdown-wrapper" style="font-size: 12px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 5px;">
+                    Next scan in <span id="timer-num">5</span>s
+                </div>
+            `;
+            
+            captureOverlay.style.background = currentMode === "ENTRY" ? "rgba(34, 197, 94, 0.95)" : "rgba(239, 68, 68, 0.95)";
             captureOverlay.style.display = "block";
-            setTimeout(() => { 
-                captureOverlay.style.display = "none"; 
-                captureOverlay.innerText = "FACE CAPTURED"; 
-            }, 3000);
+
+            let timeLeft = 5;
+            const timerInterval = setInterval(() => {
+                timeLeft--;
+                const timerNum = document.getElementById('timer-num');
+                if (timerNum) timerNum.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    captureOverlay.style.display = "none";
+                }
+            }, 1000);
         }
 
         function saveAttendance(name) {
@@ -269,132 +397,84 @@
             const dateKey = now.toISOString().split('T')[0];
             const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
-            const lastLog = localStorage.getItem('last_log_' + name);
+            const lastLog = localStorage.getItem('last_log_' + name + currentMode);
             if (lastLog && (now - new Date(lastLog)) < 18000000) return; 
 
             const tx = db.transaction("attendance", "readwrite");
-            tx.objectStore("attendance").add({ name, date: dateKey, time: timeStr, timestamp: now });
+            tx.objectStore("attendance").add({ name, date: dateKey, time: timeStr, status: currentMode, timestamp: now });
             tx.oncomplete = () => {
-                localStorage.setItem('last_log_' + name, now);
-                statusText.innerHTML = `✅ Recognized: <b>${name}</b> at ${timeStr}`;
+                localStorage.setItem('last_log_' + name + currentMode, now);
+                statusText.innerHTML = `✅ ${currentMode}: <b>${name}</b> at ${timeStr}`;
             };
         }
 
-        // --- Custom Alert Logic ---
-function showAlert(message, title = "System Notification", type = "alert") {
-    return new Promise((resolve) => {
-        const overlay = document.getElementById('customAlert');
-        const titleEl = document.getElementById('alertTitle');
-        const msgEl = document.getElementById('alertMessage');
-        const inputContainer = document.getElementById('alertInputContainer');
-        const inputField = document.getElementById('alertInput');
-        const confirmBtn = document.getElementById('alertConfirmBtn');
-        const cancelBtn = document.getElementById('alertCancelBtn');
+        function showAlert(message, title = "System Notification", type = "alert") {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('customAlert');
+                const titleEl = document.getElementById('alertTitle');
+                const msgEl = document.getElementById('alertMessage');
+                const inputContainer = document.getElementById('alertInputContainer');
+                const inputField = document.getElementById('alertInput');
+                const confirmBtn = document.getElementById('alertConfirmBtn');
+                const cancelBtn = document.getElementById('alertCancelBtn');
 
-        titleEl.innerText = title;
-        msgEl.innerText = message;
-        inputContainer.style.display = type === "prompt" ? "block" : "none";
-        cancelBtn.style.display = type === "prompt" ? "block" : "none";
-        inputField.value = "";
-        overlay.style.display = "flex";
+                titleEl.innerText = title;
+                msgEl.innerText = message;
+                inputContainer.style.display = type === "prompt" ? "block" : "none";
+                cancelBtn.style.display = type === "prompt" ? "block" : "none";
+                inputField.value = "";
+                overlay.style.display = "flex";
 
-        confirmBtn.onclick = () => {
-            overlay.style.display = "none";
-            resolve(type === "prompt" ? inputField.value : true);
-        };
-        cancelBtn.onclick = () => {
-            overlay.style.display = "none";
-            resolve(null);
-        };
-    });
-}
-
-// --- UPDATED FUNCTIONS TO USE CUSTOM ALERT ---
-
-async function registerFace() {
-    const name = document.getElementById('nameInput').value.trim();
-    if (!name) return showAlert("Please enter a name first!");
-    
-    const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-    if (detection) {
-        const tx = db.transaction("members", "readwrite");
-        tx.objectStore("members").put({ name: name, descriptor: Array.from(detection.descriptor) });
-        tx.oncomplete = async () => { 
-            await showAlert(`Face for ${name} has been successfully registered.`, "Success!"); 
-            loadFacesFromDB(); 
-        };
-    } else { 
-        showAlert("No face detected. Please ensure you are visible in the camera.", "Detection Failed"); 
-    }
-}
-
-async function openAttendanceWithAuth() {
-    const pass = localStorage.getItem('sysPass') || "admin";
-    const entry = await showAlert("Enter Access Password:", "Security Check", "prompt");
-    
-    if (entry === pass) {
-        document.getElementById('recordsModal').style.display = 'block';
-        document.getElementById('dateFilter').valueAsDate = new Date();
-        loadAttendance();
-    } else if (entry !== null) { 
-        showAlert("The password you entered is incorrect.", "Access Denied"); 
-    }
-}
-
-async function openSettings() {
-    const pass = localStorage.getItem('sysPass') || "admin";
-    const entry = await showAlert("Enter Admin Password:", "Settings Lock", "prompt");
-    if(entry === pass) document.getElementById('settingsModal').style.display = 'block';
-    else if (entry !== null) showAlert("Unauthorized access attempt.", "Denied");
-}
-
-async function saveSettings() {
-    const newName = document.getElementById('setCompanyName').value;
-    const newPass = document.getElementById('setPass').value;
-    if(newName) {
-        localStorage.setItem('companyName', newName);
-        document.getElementById('displayCompanyName').innerText = newName;
-    }
-    if(newPass) localStorage.setItem('sysPass', newPass);
-    
-    await showAlert("System settings have been updated.", "Saved");
-    closeModal('settingsModal');
-}
-
-function showCapturedUI(name) {
-    // 1. Initial Display
-    captureOverlay.innerHTML = `
-        <div style="font-size: 16px; letter-spacing: 1px;">VERIFIED</div>
-        <div style="font-size: 20px; margin: 5px 0;">${name.toUpperCase()}</div>
-        <div id="countdown-wrapper" style="font-size: 12px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 5px;">
-            Next scan in <span id="timer-num">5</span>s
-        </div>
-    `;
-    
-    captureOverlay.style.background = "rgba(34, 197, 94, 0.95)";
-    captureOverlay.style.display = "block";
-
-    // 2. Countdown Logic
-    let timeLeft = 5;
-    const timerInterval = setInterval(() => {
-        timeLeft--;
-        const timerNum = document.getElementById('timer-num');
-        if (timerNum) {
-            timerNum.innerText = timeLeft;
+                confirmBtn.onclick = () => { overlay.style.display = "none"; resolve(type === "prompt" ? inputField.value : true); };
+                cancelBtn.onclick = () => { overlay.style.display = "none"; resolve(null); };
+            });
         }
-        
-        if (timeLeft <= 0) {
-            clearInterval(timerInterval);
-            captureOverlay.style.display = "none";
-        }
-    }, 1000);
-}
 
+        async function registerFace() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (!name) return showAlert("Please enter a name first!");
+            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+            if (detection) {
+                const tx = db.transaction("members", "readwrite");
+                tx.objectStore("members").put({ name: name, descriptor: Array.from(detection.descriptor) });
+                tx.oncomplete = async () => { 
+                    await showAlert(`Face for ${name} registered.`, "Success!"); 
+                    loadFacesFromDB(); 
+                };
+            } else { showAlert("No face detected.", "Detection Failed"); }
+        }
+
+        async function openAttendanceWithAuth() {
+            const pass = localStorage.getItem('sysPass') || "admin";
+            const entry = await showAlert("Enter Access Password:", "Security Check", "prompt");
+            if (entry === pass) {
+                document.getElementById('recordsModal').style.display = 'block';
+                document.getElementById('dateFilter').valueAsDate = new Date();
+                loadAttendance();
+            } else if (entry !== null) showAlert("Incorrect password.", "Access Denied");
+        }
+
+        async function openSettings() {
+            const pass = localStorage.getItem('sysPass') || "admin";
+            const entry = await showAlert("Enter Admin Password:", "Settings Lock", "prompt");
+            if(entry === pass) document.getElementById('settingsModal').style.display = 'block';
+        }
+
+        async function saveSettings() {
+            const newName = document.getElementById('setCompanyName').value;
+            const newPass = document.getElementById('setPass').value;
+            if(newName) {
+                localStorage.setItem('companyName', newName);
+                document.getElementById('displayCompanyName').innerText = newName;
+            }
+            if(newPass) localStorage.setItem('sysPass', newPass);
+            await showAlert("System settings updated.", "Saved");
+            closeModal('settingsModal');
+        }
 
         async function searchPerson() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             if(!query) return alert("Enter a name to search");
-            modalLogs.innerHTML = "Searching...";
             const tx = db.transaction("attendance", "readonly");
             const records = await new Promise(r => tx.objectStore("attendance").getAll().onsuccess = e => r(e.target.result));
             const filtered = records.filter(r => r.name.toLowerCase().includes(query));
@@ -419,39 +499,31 @@ function showCapturedUI(name) {
             data.forEach(r => {
                 const div = document.createElement('div');
                 div.className = "record-item";
-                div.innerHTML = `<span>👤 ${r.name} <small style="color:gray">(${r.date})</small></span> <span>🕒 ${r.time}</span>`;
+                const statusColor = r.status === "ENTRY" ? "#22c55e" : "#ef4444";
+                div.innerHTML = `
+                    <span>👤 ${r.name} <small style="color:${statusColor}; font-weight:bold;">[${r.status}]</small></span> 
+                    <span>🕒 ${r.time}</span>
+                `;
                 modalLogs.appendChild(div);
             });
         }
 
-        
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        
         init();
-        
     </script>
-    <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registered!'))
-      .catch(err => console.log('Registration failed: ', err));
-  });
-}
-    </script>
+
     <div id="customAlert" class="custom-alert-overlay">
-    <div class="custom-alert-box">
-        <h3 id="alertTitle">Notification</h3>
-        <p id="alertMessage"></p>
-        <div id="alertInputContainer" style="display: none;">
-            <input type="password" id="alertInput" placeholder="Enter here...">
-        </div>
-        <div class="button-group">
-            <button id="alertConfirmBtn">OK</button>
-            <button id="alertCancelBtn" class="btn-secondary" style="display: none;">Cancel</button>
+        <div class="custom-alert-box">
+            <h3 id="alertTitle">Notification</h3>
+            <p id="alertMessage"></p>
+            <div id="alertInputContainer" style="display: none;">
+                <input type="password" id="alertInput" placeholder="Enter here...">
+            </div>
+            <div class="button-group">
+                <button id="alertConfirmBtn">OK</button>
+                <button id="alertCancelBtn" class="btn-secondary" style="display: none;">Cancel</button>
+            </div>
         </div>
     </div>
-</div>
-
 </body>
 </html>
