@@ -270,7 +270,7 @@
             const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
             const lastLog = localStorage.getItem('last_log_' + name);
-            if (lastLog && (now - new Date(lastLog)) < 5000) return; 
+            if (lastLog && (now - new Date(lastLog)) < 18000000) return; 
 
             const tx = db.transaction("attendance", "readwrite");
             tx.objectStore("attendance").add({ name, date: dateKey, time: timeStr, timestamp: now });
