@@ -1,7 +1,7 @@
 {
-  "name": "Life Manager",
-  "short_name": "LifeMgr",
-  "start_url": "casbook.html",
+  "name": "Attendance Manager",
+  "short_name": "Attender",
+  "start_url": "/Manage_attendancies/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50",
