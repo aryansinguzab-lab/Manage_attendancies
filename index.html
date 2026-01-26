@@ -322,7 +322,7 @@
                 video.srcObject = stream;
                 video.style.display = "block";
                 sleepMsg.style.display = "none";
-                statusText.innerText = "Scanning for " + currentMode + "...";
+                statusText.innerText = "SCANNING FOR " + currentMode + "...";
                 if (scanInterval) clearInterval(scanInterval);
                 scanInterval = setInterval(scanFace, 2000); 
             }).catch(err => { statusText.innerText = "Camera Access Denied"; });
@@ -364,10 +364,14 @@
                     showCapturedUI(match.label);
                     saveAttendance(match.label);
                     setTimeout(() => { if (!isSleeping) scanInterval = setInterval(scanFace, 2000); }, 5000);
+                } else {
+                    // IMPORTANT ALERT: FACE NOT CLEAR / UNKNOWN
+                    statusText.innerHTML = "<span style='color:#ef4444;'>⚠️ Face not recognized. Move closer.</span>";
                 }
+            } else {
+                statusText.innerText = "SCANNING FOR " + currentMode + "...";
             }
         }
-
         function showCapturedUI(name) {
             captureOverlay.innerHTML = `
                 <div style="font-size: 16px; letter-spacing: 1px;">${currentMode} VERIFIED</div>
