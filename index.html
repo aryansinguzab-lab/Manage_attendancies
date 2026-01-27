@@ -62,12 +62,41 @@
         .custom-alert-box h3 { margin-top: 0; color: #3b82f6; }
         .custom-alert-box p { color: #94a3b8; margin-bottom: 20px; }
         .custom-alert-input { margin-bottom: 15px !important; }
+:root {
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --text: #ffffff;
+    --border: #334155;
+    --input-bg: #0f172a;
+}
 
-        .card { 
-            background: #1e293b; padding: 24px; border-radius: 15px; 
-            max-width: 400px; margin: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            position: relative;
-        }
+body.light-theme {
+    --bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+    --border: #cbd5e1;
+    --input-bg: #f8fafc;
+}
+
+body { background: var(--bg); color: var(--text); transition: 0.3s; }
+.card, .modal-content { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); }
+input { background: var(--input-bg); color: var(--text); border-color: var(--border); }
+
+      .card, .modal-content, .lock-card, .custom-alert-box { 
+    background: var(--card-bg); 
+    border: 1px solid var(--border); 
+    color: var(--text); /* Ensures text flips from white to dark slate */
+}
+
+.record-list { 
+    background: var(--input-bg); 
+    border: 1px solid var(--border); 
+}
+
+#status, label { 
+    color: var(--text-muted); /* Prevents light gray text from disappearing on white */
+}
+
         
         .button-group { display: flex; gap: 10px; margin-top: 10px; }
         
@@ -93,7 +122,7 @@
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; }
         .modal-content { background: #1e293b; margin: 5% auto; padding: 20px; width: 90%; max-width: 450px; border-radius: 15px; text-align: left; }
-        .record-list { height: 300px; overflow-y: auto; background: #0f172a; padding: 10px; border-radius: 8px; margin: 15px 0; border: 1px solid #334155; }
+
         .record-item { border-bottom: 1px solid #334155; padding: 10px 5px; display: flex; justify-content: space-between; font-size: 14px; }
         
         .search-box { display: flex; gap: 5px; margin-bottom: 10px; }
@@ -135,6 +164,13 @@
     </div>
 
     <h2 id="displayCompanyName" style="margin-bottom: 20px; color: #3b82f6;">AI Attendance System</h2>
+    <button id="themeToggle" class="btn-secondary" 
+        style="position: absolute; top: 10px; left: 10px; width: 35px; height: 35px; padding: 0; border-radius: 50%;" 
+        onclick="toggleTheme()">
+    🌙THM
+</button>
+ <button class="btn-settings" onclick="openSettings()">⚙️ SET</button>
+
     <div class="video-container">
     <video id="video" autoplay muted playsinline></video>
     <div id="sleep-msg" style="display:none; color: #64748b; font-weight: bold;">[ CAMERA OFF ]</div>
@@ -145,15 +181,79 @@
     <div id="capture-overlay">FACE CAPTURED</div>
 </div>
 
+  <div id="termsModal" class="modal">
+    <div class="modal-content" style="max-height: 85vh; overflow-y: auto; text-align: left;">
+        <h2 style="color: #3b82f6; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 10px;">Terms of Use & Privacy Policy</h2>
+        
+        <section style="margin-bottom: 20px;">
+            <h4 style="color: #22c55e;">🛡️ The Privacy Story (How it works)</h4>
+            <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">
+                When you click "Register," this app doesn't save your photo. Instead, the AI looks at the geometry of your face,the distance between eyes, the curve of your jaw and converts it into a <strong>128-bit mathematical vector</strong>. It will relate the next capture to the stored geometric features and records the individual entrance/exit. 
+                <br><br>
+                Think of it like a digital fingerprint made of numbers. Even if someone stole the database, they couldn't see your face; they would only see a list of random numbers.
+            </p>
+        </section>
+
+        
+
+        <section style="font-size: 13px; color: #94a3b8; line-height: 1.5;">
+            <h4 style="color: white; border-bottom: 1px solid #334155;">1. DATA LOCALITY</h4>
+            <p>All biometric descriptors and attendance logs are stored strictly in the browser's <strong>IndexedDB</strong> on this specific device. No data is sent to the cloud, Google, or any external server.</p>
+
+            <h4 style="color: white; border-bottom: 1px solid #334155;">2. USER CONSENT</h4>
+            <p>The Administrator (main user) of this device is responsible for obtaining explicit consent from all individuals before registering their facial data. Use of this system for unauthorized surveillance is strictly prohibited.</p>
+
+            <h4 style="color: white; border-bottom: 1px solid #334155;">3. ACCURACY & LIMITATIONS</h4>
+            <p>While the ACSOL AI is highly advanced, factors such as extreme lighting, face masks, or identical twins may affect recognition accuracy. The system is provided "as is" without a 100% accuracy guarantee. It uses 10 minutes interval to record the same person consecutively to avoid unnecessary repeated records and  overcrowding the database</p>
+
+            <h4 style="color: white; border-bottom: 1px solid #334155;">4. TRIAL & ACTIVATION</h4>
+            <p>This software operates on a 7-day trial basis. After expiration, the system will lock and require an activation code obtained from the authorized developer via WhatsApp (+256754010923), .</p>
+
+            <h4 style="color: white; border-bottom: 1px solid #334155;">5. MASTER RESET</h4>
+            <p>The "Master Reset" tool in settings will permanently delete all logs and all biometric descriptors. Once deleted, this data cannot be recovered by the developer or the device owner.</p>
+        </section>
+
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #334155;">
+            <button onclick="closeModal('termsModal')" style="width: 100%; background: #22c55e;">I Accept & Understand</button>
+        </div>
+    </div>
+</div>
+  
+   <div id="recordsModal" class="modal" 
+     style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, 0.5) !important; backdrop-filter: blur(4px); align-items: center; justify-content: center; color-scheme: light dark;">
     
-   
+    <div class="modal-content" 
+         style="background: Canvas !important; color: CanvasText !important; border: 1px solid rgba(128,128,128,0.3) !important; padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: 500px; width: 90%; margin: auto; margin-top: 10vh;">
+        
+        <h3 style="margin-top:0; color: #3b82f6 !important;">Attendance Database</h3>
+        
+        <div class="search-box" style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="searchInput" placeholder="Search person's name..." 
+                   style="background: Field !important; color: FieldText !important; border: 1px solid rgba(128,128,128,0.5) !important; text-align: left; flex: 1; padding: 8px; border-radius: 4px;">
+            <button style="width: 80px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="searchPerson()">Search</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <label style="font-size: 12px; opacity: 0.7;">Filter by Date:</label>
+            <button style="width: auto; padding: 4px 10px; font-size: 11px; background: rgba(128,128,128,0.2); color: CanvasText; border: 1px solid rgba(128,128,128,0.3); border-radius: 4px;" onclick="loadAttendance()">Show All Today</button>
+        </div>
+
+        <input type="date" id="dateFilter" onchange="loadAttendance()" 
+               style="background: Field !important; color: FieldText !important; border: 1px solid rgba(128,128,128,0.5) !important; width: 100%; margin-bottom: 15px; padding: 8px; border-radius: 4px;">
+        
+        <div class="record-list" id="modalLogs" 
+             style="height: 300px; overflow-y: auto; background: rgba(128,128,128,0.08) !important; padding: 10px; border-radius: 8px; border: 1px solid rgba(128,128,128,0.2) !important;">
+             </div>
+
+        <button class="btn-secondary" style="width: 100%; margin-top: 15px; background: #475569; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;" onclick="closeModal('recordsModal')">Close</button>
+    </div>
+</div>
+
     
 <div class="card">
-    <button class="btn-settings" onclick="openSettings()">⚙️</button>
-    
-    <div class="mode-container">
-        <button id="entryBtn" class="mode-btn active-entry" onclick="setMode('ENTRY')">ENTRY</button>
-        <button id="exitBtn" class="mode-btn" onclick="setMode('EXIT')">EXIT</button>
+  <div class="mode-container">
+        <button id="entryBtn" class="mode-btn active-entry" onclick="setMode('ENTRY')">ENTERING</button>
+        <button id="exitBtn" class="mode-btn" onclick="setMode('EXIT')">EXITING</button>
     </div>
 
     <div id="status">Waking up AI...</div>
@@ -162,34 +262,20 @@
     
     <div style="margin: 20px 0; border-top: 1px solid #334155;"></div>
     
-    <input type="text" id="nameInput" placeholder="Enter a new name to register">
+    <input type="text" id="nameInput" placeholder="Enter a new name and click Register">
     
     <div class="button-group">
         <button id="regBtn" onclick="registerFace()">Register new face</button>
-        <button class="btn-secondary" onclick="openAttendanceWithAuth()">Attendance</button>
+        <button class="btn-secondary" onclick="openAttendanceWithAuth()">View attendance</button>
+   
     </div>
+    <div>
+         <button class="btn-secondary" style="font-size: 11px;margin-top:15px" onclick="document.getElementById('termsModal').style.display='block'">📜 View Terms & Conditions</button>
+         </div>
 </div>
 
 
-    <div id="recordsModal" class="modal">
-        <div class="modal-content">
-            <h3 style="margin-top:0">Attendance Database</h3>
-            </div>
-            
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search person's name...">
-                <button style="width: 80px;" onclick="searchPerson()">Search</button>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label style="font-size: 12px; color: #94a3b8;">Filter by Date:</label>
-                <button style="width: auto; padding: 4px 10px; font-size: 11px;" onclick="loadAttendance()">Show All Today</button>
-            </div>
-            <input type="date" id="dateFilter" onchange="loadAttendance()" style="margin-top:5px;">
-            <div class="record-list" id="modalLogs"></div>
-            <button class="btn-secondary" onclick="closeModal('recordsModal')">Close</button>
-        </div>
-    </div>
-
+ 
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <h3 style="margin-top:0">System Settings</h3>
@@ -492,6 +578,28 @@ async function saveMultiAngleFace(name, descriptors) {
     console.log(`Loaded ${registeredFaces.length} facial profiles.`);
 }
 
+function toggleTheme() {
+    const body = document.body;
+    const btn = document.getElementById('themeToggle');
+    
+    body.classList.toggle('light-theme');
+    
+    const isLight = body.classList.contains('light-theme');
+    btn.innerText = isLight ? "☀️" : "🌙";
+    
+    // Save preference
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+
+// Add this to your init() function so it loads the saved theme
+function applySavedTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        document.getElementById('themeToggle').innerText = "☀️";
+    }
+}
+
         async function scanFace() {
             if (registeredFaces.length === 0 || isSleeping) return;
             const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
@@ -573,7 +681,7 @@ async function clearAllData() {
             const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
             const lastLog = localStorage.getItem('last_log_' + name + currentMode);
-            if (lastLog && (now - new Date(lastLog)) < 300000) return; 
+            if (lastLog && (now - new Date(lastLog)) < 600000) return; 
 
             const tx = db.transaction("attendance", "readwrite");
             tx.objectStore("attendance").add({ name, date: dateKey, time: timeStr, status: currentMode, timestamp: now });
@@ -689,3 +797,6 @@ async function clearAllData() {
     </div>
 </body>
 </html>
+
+
+
