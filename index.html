@@ -636,7 +636,7 @@ async function clearAllData() {
 
         async function searchPerson() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            if(!query) return alert("Enter a name to search");
+            if(!query) return showAlert("Enter a name to search");
             const tx = db.transaction("attendance", "readonly");
             const records = await new Promise(r => tx.objectStore("attendance").getAll().onsuccess = e => r(e.target.result));
             const filtered = records.filter(r => r.name.toLowerCase().includes(query));
