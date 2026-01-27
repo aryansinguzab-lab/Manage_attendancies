@@ -124,7 +124,7 @@
     <div id="expiryLock">
         <div class="lock-card">
             <h2 style="color:#ef4444; margin-top:0;">Trial Expired ⏳</h2>
-            <p style="font-size:14px; color:#94a3b8;">Your access to the System has expired. Please enter your activation code from +256754010923 to continue.</p>
+            <p style="font-size:14px; color:#94a3b8;">Your access to the System has expired. Please enter your activation code to continue obtained from +256754010923.</p>
             <div style="background:#0f172a; padding:10px; border-radius:8px; margin:15px 0; border:1px dashed #334155;">
                 <small style="color:#64748b;">Request ID:</small><br>
                 <strong id="userRequestID" style="color:#3b82f6; font-family:monospace; letter-spacing:1px;"></strong>
@@ -135,38 +135,47 @@
     </div>
 
     <h2 id="displayCompanyName" style="margin-bottom: 20px; color: #3b82f6;">AI Attendance System</h2>
-    
     <div class="video-container">
-        <video id="video" autoplay muted playsinline></video>
-        <div id="sleep-msg" style="display:none; color: #64748b; font-weight: bold;">[ CAMERA OFF ]</div>
-        <div id="capture-overlay">FACE CAPTURED</div>
-    </div>
+    <video id="video" autoplay muted playsinline></video>
+    <div id="sleep-msg" style="display:none; color: #64748b; font-weight: bold;">[ CAMERA OFF ]</div>
     
-    <div class="card">
-        <button class="btn-settings" onclick="openSettings()">⚙️</button>
-        
-        <div class="mode-container">
-            <button id="entryBtn" class="mode-btn active-entry" onclick="setMode('ENTRY')">ENTRY</button>
-            <button id="exitBtn" class="mode-btn" onclick="setMode('EXIT')">EXIT</button>
-        </div>
+    <div id="reg-progress" style="position: absolute; bottom: 0; left: 0; height: 6px; background: #22c55e; width: 0%; transition: 0.3s; z-index: 20;"></div>
+    <div id="angle-guide" style="position: absolute; top: 20px; width: 100%; color: #fbbf24; font-weight: bold; font-size: 18px; text-shadow: 2px 2px 4px #000; z-index: 20; display: none; text-align: center;">LOOK DIRECTLY</div>
+    
+    <div id="capture-overlay">FACE CAPTURED</div>
+</div>
 
-        <div id="status">Waking up AI...</div>
-        
-        <button id="toggleBtn" class="btn-sleep" onclick="toggleCamera()">Sleep Camera</button>
-        
-        <div style="margin: 20px 0; border-top: 1px solid #334155;"></div>
-        
-        <input type="text" id="nameInput" placeholder="Enter name to register">
-        
-        <div class="button-group">
-            <button onclick="registerFace()">Register Face</button>
-            <button class="btn-secondary" onclick="openAttendanceWithAuth()">Attendance</button>
-        </div>
+    
+   
+    
+<div class="card">
+    <button class="btn-settings" onclick="openSettings()">⚙️</button>
+    
+    <div class="mode-container">
+        <button id="entryBtn" class="mode-btn active-entry" onclick="setMode('ENTRY')">ENTRY</button>
+        <button id="exitBtn" class="mode-btn" onclick="setMode('EXIT')">EXIT</button>
     </div>
+
+    <div id="status">Waking up AI...</div>
+    
+    <button id="toggleBtn" class="btn-sleep" onclick="toggleCamera()">Sleep Camera</button>
+    
+    <div style="margin: 20px 0; border-top: 1px solid #334155;"></div>
+    
+    <input type="text" id="nameInput" placeholder="Enter a new name to register">
+    
+    <div class="button-group">
+        <button id="regBtn" onclick="registerFace()">Register new face</button>
+        <button class="btn-secondary" onclick="openAttendanceWithAuth()">Attendance</button>
+    </div>
+</div>
+
 
     <div id="recordsModal" class="modal">
         <div class="modal-content">
             <h3 style="margin-top:0">Attendance Database</h3>
+            </div>
+            
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Search person's name...">
                 <button style="width: 80px;" onclick="searchPerson()">Search</button>
@@ -184,8 +193,15 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <h3 style="margin-top:0">System Settings</h3>
+            <div style="margin: 20px 0; border-top: 1px solid #334155; padding-top: 15px;">
+    <p style="color: #ef4444; font-size: 11px; margin-bottom: 8px; font-weight: bold;">DANGER ZONE</p>
+    <button onclick="clearAllData()" style="background: #ef4444; width: 100%;">Master Reset (Wipe All Faces & Logs)</button>
+</div>
+
+
             <label>Company Name</label>
             <input type="text" id="setCompanyName" placeholder="e.g. Acme Corp">
+           
             <label>Access Password</label>
             <input type="password" id="setPass" placeholder="New Password">
             <button onclick="saveSettings()">Save & Close</button>
@@ -223,7 +239,7 @@
             currentMode = mode;
             document.getElementById('entryBtn').className = mode === 'ENTRY' ? "mode-btn active-entry" : "mode-btn";
             document.getElementById('exitBtn').className = mode === 'EXIT' ? "mode-btn active-exit" : "mode-btn";
-            statusText.innerText = "Scanner set to: " + mode;
+            statusText.innerText = "SCANNER SET TO " + mode;
         }
 
         async function init() {
@@ -246,6 +262,112 @@
                 });
             };
         }
+// Simplified state variables
+let capturedDescriptors = [];
+const TOTAL_SAMPLES = 5; 
+
+async function registerFace() {
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) return showAlert("Please enter a name first!");
+
+    // Stop the normal scanning loop
+    if (typeof scanInterval !== 'undefined') clearInterval(scanInterval);
+    
+    const progress = document.getElementById('reg-progress');
+    const guide = document.getElementById('angle-guide');
+    
+    let captures = 0;
+    capturedDescriptors = [];
+
+    // UI Reset
+    guide.innerText = "LOOK DIRECTLY AT CAMERA";
+    guide.style.display = "block";
+    progress.style.width = "0%";
+
+    const regInterval = setInterval(async () => {
+        // We only need Landmarks for the Pose check and Descriptor for the data
+        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+        if (detection) {
+            const landmarks = detection.landmarks;
+            const nose = landmarks.getNose()[0];
+            const leftEye = landmarks.getLeftEye()[0];
+            const rightEye = landmarks.getRightEye()[0];
+
+            // Calculate Yaw (Center check)
+            const yaw = (leftEye.x + rightEye.x) / 2 - nose.x;
+            const poseValue = Math.abs(yaw / 100);
+
+            // Capture only if the user is looking relatively straight (Threshold: 0.2)
+            if (poseValue < 0.2) {
+                capturedDescriptors.push(Array.from(detection.descriptor));
+                captures++;
+                
+                // Update UI
+                progress.style.width = (captures / TOTAL_SAMPLES) * 100 + "%";
+                guide.innerText = `CAPTURING... ${captures}/${TOTAL_SAMPLES}`;
+                
+                // Visual "shutter" feedback
+                video.style.filter = "brightness(1.5)";
+                setTimeout(() => video.style.filter = "none", 50);
+            } else {
+                guide.innerText = "PLEASE LOOK DIRECTLY AT CAMERA";
+            }
+        }
+
+        // Finish when we have enough samples
+        if (captures >= TOTAL_SAMPLES) {
+            clearInterval(regInterval);
+            guide.innerText = "SAVING...";
+            saveMultiAngleFace(name, capturedDescriptors);
+        }
+    }, 450); // Fast enough to be quick, slow enough for the user to react
+}
+
+async function saveMultiAngleFace(name, descriptors) {
+    try {
+        const tx = db.transaction("members", "readwrite");
+        const store = tx.objectStore("members");
+
+        // We store the name and the array of 5 descriptors
+        const memberData = { 
+            name: name, 
+            descriptors: descriptors,
+            registeredAt: new Date().toISOString() 
+        };
+
+        const request = store.put(memberData);
+
+        request.onsuccess = () => {
+            console.log(`Successfully registered ${name}`);
+        };
+
+        tx.oncomplete = async () => {
+            // Visual cleanup before the alert
+            const guide = document.getElementById('angle-guide');
+            const progress = document.getElementById('reg-progress');
+            if (guide) guide.style.display = "none";
+            if (progress) progress.style.width = "0%";
+
+            await showAlert(`${name} registered successfully!`, "Success!");
+            
+            // Reload to refresh the FaceMatcher with the new data
+            location.reload();
+        };
+
+        tx.onerror = (err) => {
+            console.error("Database Error:", err);
+            showAlert("Failed to save to database.", "Error");
+        };
+
+    } catch (error) {
+        console.error("Transaction Error:", error);
+        showAlert("An unexpected error occurred.", "Error");
+    }
+}
+
 
         // TRIAL LOGIC FUNCTIONS
         async function handleTrialSystem() {
@@ -346,10 +468,29 @@
         }
 
         async function loadFacesFromDB() {
-            const tx = db.transaction("members", "readonly");
-            const members = await new Promise(r => tx.objectStore("members").getAll().onsuccess = e => r(e.target.result));
-            registeredFaces = members.map(m => new faceapi.LabeledFaceDescriptors(m.name, [new Float32Array(m.descriptor)]));
-        }
+    const tx = db.transaction("members", "readonly");
+    const store = tx.objectStore("members");
+    
+    const members = await new Promise(r => {
+        store.getAll().onsuccess = e => r(e.target.result);
+    });
+
+    // Check if we actually have members
+    if (members.length === 0) {
+        console.log("No registered faces found in DB.");
+        return [];
+    }
+
+    registeredFaces = members.map(m => {
+        // m.descriptors is the array of 5 captures we saved earlier
+        // We must convert each individual capture back into a Float32Array
+        const faceVectors = m.descriptors.map(d => new Float32Array(d));
+        
+        return new faceapi.LabeledFaceDescriptors(m.name, faceVectors);
+    });
+
+    console.log(`Loaded ${registeredFaces.length} facial profiles.`);
+}
 
         async function scanFace() {
             if (registeredFaces.length === 0 || isSleeping) return;
@@ -364,14 +505,10 @@
                     showCapturedUI(match.label);
                     saveAttendance(match.label);
                     setTimeout(() => { if (!isSleeping) scanInterval = setInterval(scanFace, 2000); }, 5000);
-                } else {
-                    // IMPORTANT ALERT: FACE NOT CLEAR / UNKNOWN
-                    statusText.innerHTML = "<span style='color:#ef4444;'>⚠️ Face not recognized. Move closer.</span>";
                 }
-            } else {
-                statusText.innerText = "SCANNING FOR " + currentMode + "...";
             }
         }
+
         function showCapturedUI(name) {
             captureOverlay.innerHTML = `
                 <div style="font-size: 16px; letter-spacing: 1px;">${currentMode} VERIFIED</div>
@@ -396,13 +533,47 @@
             }, 1000);
         }
 
+async function clearAllData() {
+    // 1. Security Check
+    const pass = localStorage.getItem('sysPass') || "";
+    const entry = await showAlert("WARNING: This will delete ALL attendance logs AND ALL registered faces. Enter Admin Password:", "Master Reset", "prompt");
+    
+    if (entry === pass) {
+        try {
+            // We open a transaction for both stores
+            const tx = db.transaction(["attendance", "members"], "readwrite");
+            
+            // Clear logs
+            tx.objectStore("attendance").clear();
+            // Clear faces
+            tx.objectStore("members").clear();
+            
+            tx.oncomplete = async () => {
+                await showAlert("All data wiped. The system is now empty.", "System Reset");
+                // Reset local variables
+                registeredFaces = [];
+                // Reload to ensure the FaceMatcher is empty and UI is fresh
+                location.reload();
+            };
+
+            tx.onerror = (err) => {
+                showAlert("Error during reset: " + err.message, "System Error");
+            };
+        } catch (err) {
+            showAlert("Error accessing database: " + err.message, "System Error");
+        }
+    } else if (entry !== null) {
+        showAlert("Incorrect password. No data was deleted.", "Access Denied");
+    }
+}
+
         function saveAttendance(name) {
             const now = new Date();
             const dateKey = now.toISOString().split('T')[0];
             const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
             const lastLog = localStorage.getItem('last_log_' + name + currentMode);
-            if (lastLog && (now - new Date(lastLog)) < 18000000) return; 
+            if (lastLog && (now - new Date(lastLog)) < 300000) return; 
 
             const tx = db.transaction("attendance", "readwrite");
             tx.objectStore("attendance").add({ name, date: dateKey, time: timeStr, status: currentMode, timestamp: now });
@@ -434,22 +605,9 @@
             });
         }
 
-        async function registerFace() {
-            const name = document.getElementById('nameInput').value.trim();
-            if (!name) return showAlert("Please enter a name first!");
-            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-            if (detection) {
-                const tx = db.transaction("members", "readwrite");
-                tx.objectStore("members").put({ name: name, descriptor: Array.from(detection.descriptor) });
-                tx.oncomplete = async () => { 
-                    await showAlert(`Face for ${name} registered.`, "Success!"); 
-                    loadFacesFromDB(); 
-                };
-            } else { showAlert("No face detected.", "Detection Failed"); }
-        }
-
+        
         async function openAttendanceWithAuth() {
-            const pass = localStorage.getItem('sysPass') || "admin";
+            const pass = localStorage.getItem('sysPass') || "";
             const entry = await showAlert("Enter Access Password:", "Security Check", "prompt");
             if (entry === pass) {
                 document.getElementById('recordsModal').style.display = 'block';
@@ -459,7 +617,7 @@
         }
 
         async function openSettings() {
-            const pass = localStorage.getItem('sysPass') || "admin";
+            const pass = localStorage.getItem('sysPass') || "";
             const entry = await showAlert("Enter Admin Password:", "Settings Lock", "prompt");
             if(entry === pass) document.getElementById('settingsModal').style.display = 'block';
         }
