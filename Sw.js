@@ -1,40 +1,44 @@
-const cacheName = 'attendancdmgr'; 
-const assets = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/face-api.min.js',
-  '/icon.png'
-  
-  // Add icon here only if it physically exists in the folder
+const CACHE_NAME = 'biz-registry-v6';
+// List every file you want to work offline
+const ASSETS_TO_CACHE = [
+  './Index.html',    // Capitalized to match your file
+  './manifest.json',
+  './icon2.png'      // Your phone's icon image
 ];
 
-self.addEventListener('install', evt => {
-  evt.waitUntil(
-    caches.open(cacheName).then(cache => {
-      // We use a map to catch errors so one missing file doesn't break the app
-      return Promise.allSettled(assets.map(url => cache.add(url)));
+// Install: Save files to the browser's "Vault"
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('SW: Caching assets');
+      return cache.addAll(ASSETS_TO_CACHE);
     })
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', evt => {
-  evt.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(key => key !== cacheName).map(key => caches.delete(key))
-      );
+// Activate: Delete old caches when you update the version
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((key) => {
+        if (key !== CACHE_NAME) return caches.delete(key);
+      }));
     })
   );
-  return self.clients.claim();
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', evt => {
-  // Only handle standard GET requests
-  if (evt.request.method !== 'GET') return;
-
-  evt.respondWith(
+// Fetch: Intercept network requests
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      // Return cached file if found, otherwise go to internet
+      return response || fetch(event.request);
+    })
+  );
+});
+evt.respondWith(
     caches.open(cacheName).then(cache => {
       return cache.match(evt.request).then(cachedRes => {
         const fetchPromise = fetch(evt.request).then(networkRes => {
