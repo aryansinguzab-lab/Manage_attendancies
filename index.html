@@ -1,802 +1,357 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Attendance Tracker Pro</title>
-    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
-    <script src="face-api.min.js"></script>
-    
+    <title>Business Registry - Secure Pro</title>
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#121212">
+<link rel="apple-touch-icon" href="icon-192.png">
+  <script src="dexie.js"></script>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
+        body { font-family: sans-serif; margin: 0; padding: 0; background: #121212; color: #e0e0e0; user-select: none; -webkit-user-select: none; }
+        .screen { display: none; min-height: 100vh; padding: 20px; box-sizing: border-box; padding-bottom: 80px; }
+        .active-screen { display: block; }
+        .box { max-width: 450px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid #333; }
         
-        .video-container { 
-            position: relative; width: 320px; height: 200px; margin: 0 auto 20px auto; 
-            background: #000; border-radius: 12px; display: flex; align-items: center; 
-            justify-content: center; overflow: hidden; border: 2px solid #334155;
-        }
-        video { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
+        h2, h3 { color: #a0cfff; margin-top: 0; text-align: center; }
+        .stats { text-align: center; font-size: 14px; color: #888; margin-bottom: 20px; background: #252525; padding: 10px; border-radius: 8px; border: 1px solid #333; }
         
-        #capture-overlay { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%);
-            background: rgba(34, 197, 94, 0.9); 
-            color: white; 
-            padding: 20px;
-            border-radius: 12px; 
-            font-weight: bold; 
-            display: none; 
-            z-index: 10; 
-            min-width: 180px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-            border: 2px solid rgba(255,255,255,0.2);
-            transition: opacity 0.3s ease;
-        }
-
-        /* Mode Switcher Styles */
-        .mode-container {
-            display: flex; background: #0f172a; padding: 5px; border-radius: 10px;
-            margin-bottom: 15px; border: 1px solid #334155; gap: 5px;
-        }
-        .mode-btn {
-            flex: 1; padding: 10px; border-radius: 8px; border: none;
-            color: #94a3b8; background: transparent; cursor: pointer;
-            font-weight: bold; transition: 0.3s; font-size: 12px;
-        }
-        .mode-btn.active-entry { background: #22c55e; color: white; }
-        .mode-btn.active-exit { background: #ef4444; color: white; }
-
-        /* Custom Alert Styles */
-        .custom-alert-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85); display: none; align-items: center;
-            justify-content: center; z-index: 9999; backdrop-filter: blur(4px);
-        }
-        .custom-alert-box {
-            background: #1e293b; border: 1px solid #334155; padding: 25px;
-            border-radius: 15px; width: 90%; max-width: 350px; text-align: center;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-        .custom-alert-box h3 { margin-top: 0; color: #3b82f6; }
-        .custom-alert-box p { color: #94a3b8; margin-bottom: 20px; }
-        .custom-alert-input { margin-bottom: 15px !important; }
-:root {
-    --bg: #0f172a;
-    --card-bg: #1e293b;
-    --text: #ffffff;
-    --border: #334155;
-    --input-bg: #0f172a;
-}
-
-body.light-theme {
-    --bg: #f1f5f9;
-    --card-bg: #ffffff;
-    --text: #1e293b;
-    --border: #cbd5e1;
-    --input-bg: #f8fafc;
-}
-
-body { background: var(--bg); color: var(--text); transition: 0.3s; }
-.card, .modal-content { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); }
-input { background: var(--input-bg); color: var(--text); border-color: var(--border); }
-
-      .card, .modal-content, .lock-card, .custom-alert-box { 
-    background: var(--card-bg); 
-    border: 1px solid var(--border); 
-    color: var(--text); /* Ensures text flips from white to dark slate */
-}
-
-.record-list { 
-    background: var(--input-bg); 
-    border: 1px solid var(--border); 
-}
-
-#status, label { 
-    color: var(--text-muted); /* Prevents light gray text from disappearing on white */
-}
-
+        video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; min-height: 250px; border: 1px solid #444; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #444; border-radius: 6px; box-sizing: border-box; background: #2c2c2c; color: white; font-size: 16px; }
         
-        .button-group { display: flex; gap: 10px; margin-top: 10px; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 12px; transition: 0.2s; font-size: 14px; }
+        button:active { transform: scale(0.96); }
         
-        button { 
-            background: #3b82f6; color: white; border: none; padding: 12px; 
-            border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; 
-            transition: 0.2s; font-size: 14px;
-        }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
-
-        .btn-secondary { background: #475569; }
-        .btn-sleep { background: #ef4444; }
-        .btn-wake { background: #22c55e; }
-        .btn-settings { position: absolute; top: 10px; right: 10px; width: 35px; height: 35px; padding: 0; background: #334155; border-radius: 50%; border:none; cursor:pointer;}
+        .btn-blue { background: #4a90e2; color: white; }
+        .btn-gray { background: #444; color: white; }
+        .btn-green { background: #2e7d32; color: white; }
+        .btn-red { background: #b71c1c; color: white; }
+        .btn-back { background: #333; color: #a0cfff; border: 1px solid #444; margin-bottom: 20px; width: auto; padding: 10px 20px; }
         
-        input { 
-            width: 100%; box-sizing: border-box; padding: 12px; 
-            margin-bottom: 15px; border-radius: 8px; border: 1px solid #334155; 
-            background: #0f172a; color: white; text-align: center;
-        }
+        #galleryGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+        .gallery-item { width: 100%; aspect-ratio: 1; border-radius: 8px; object-fit: cover; border: 1px solid #444; cursor: pointer; }
         
-        #status { font-size: 13px; margin-bottom: 15px; color: #94a3b8; }
+        .viewer-container { margin-top: 20px; padding: 15px; background: #252525; border-radius: 8px; text-align: center; border: 1px solid #333; }
+        .view-img { width: 100%; border-radius: 6px; margin-top: 10px; margin-bottom: 15px; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; }
-        .modal-content { background: #1e293b; margin: 5% auto; padding: 20px; width: 90%; max-width: 450px; border-radius: 15px; text-align: left; }
+        #optionsMenu { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; flex-direction: column; justify-content: center; align-items: center; }
+        .menu-box { width: 85%; max-width: 320px; background: #2c2c2c; padding: 25px; border-radius: 15px; border: 1px solid #4a90e2; text-align: center; }
 
-        .record-item { border-bottom: 1px solid #334155; padding: 10px 5px; display: flex; justify-content: space-between; font-size: 14px; }
-        
-        .search-box { display: flex; gap: 5px; margin-bottom: 10px; }
-        .search-box input { margin-bottom: 0; text-align: left; }
+        #customAlert { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 6000; justify-content: center; align-items: center; }
+        .alert-content { background: #2c2c2c; padding: 25px; border-radius: 15px; width: 85%; max-width: 320px; text-align: center; border: 1px solid #a0cfff; }
 
-        /* TRIAL STYLES */
-        #trialBadge {
-            position: fixed; top: 10px; left: 10px; background: #FF9800; color: white; 
-            padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; 
-            z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: none;
-        }
-        #expiryLock {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(15, 23, 42, 0.99); z-index: 20000; display: none; 
-            flex-direction: column; justify-content: center; align-items: center; 
-            color: white; text-align: center; backdrop-filter: blur(8px);
-        }
-        .lock-card {
-            background: #1e293b; padding: 30px; border-radius: 15px; border: 1px solid #334155;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-width: 350px; width: 90%;
-        }
+        #lockScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
+
+        .legal-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; color: #a0cfff; padding: 10px 0; font-size: 12px; font-weight: bold; border-top: 1px solid #444; z-index: 3000; }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-    <div id="trialBadge">Trial: <span id="daysLeft">--</span> days left</div>
-
-    <div id="expiryLock">
-        <div class="lock-card">
-            <h2 style="color:#ef4444; margin-top:0;">Trial Expired ⏳</h2>
-            <p style="font-size:14px; color:#94a3b8;">Your access to the System has expired. Please enter your activation code to continue obtained from +256754010923.</p>
-            <div style="background:#0f172a; padding:10px; border-radius:8px; margin:15px 0; border:1px dashed #334155;">
-                <small style="color:#64748b;">Request ID:</small><br>
-                <strong id="userRequestID" style="color:#3b82f6; font-family:monospace; letter-spacing:1px;"></strong>
-            </div>
-            <input type="text" id="unlockCodeInput" placeholder="Enter Activation Code" style="margin-bottom:10px;">
-            <button onclick="checkUnlockCode()" style="background:#22c55e;">Activate System</button>
-        </div>
-    </div>
-
-    <h2 id="displayCompanyName" style="margin-bottom: 20px; color: #3b82f6;">AI Attendance System</h2>
-    <button id="themeToggle" class="btn-secondary" 
-        style="position: absolute; top: 10px; left: 10px; width: 35px; height: 35px; padding: 0; border-radius: 50%;" 
-        onclick="toggleTheme()">
-    🌙THM
-</button>
- <button class="btn-settings" onclick="openSettings()">⚙️ SET</button>
-
-    <div class="video-container">
-    <video id="video" autoplay muted playsinline></video>
-    <div id="sleep-msg" style="display:none; color: #64748b; font-weight: bold;">[ CAMERA OFF ]</div>
-    
-    <div id="reg-progress" style="position: absolute; bottom: 0; left: 0; height: 6px; background: #22c55e; width: 0%; transition: 0.3s; z-index: 20;"></div>
-    <div id="angle-guide" style="position: absolute; top: 20px; width: 100%; color: #fbbf24; font-weight: bold; font-size: 18px; text-shadow: 2px 2px 4px #000; z-index: 20; display: none; text-align: center;">LOOK DIRECTLY</div>
-    
-    <div id="capture-overlay">FACE CAPTURED</div>
+<div id="lockScreen">
+    <h2 style="color: #ff5252;">SUBSCRIPTION EXPIRED</h2>
+    <p>Please enter this month's activation key.</p>
+    <p style="font-size: 12px; color: #888;"> WhatsApp the developer for the code at +256754010923</p>
+    <input type="text" id="monthKeyInput"  style="text-align: center; text-transform: uppercase;">
+    <button class="btn-blue" onclick="validateMonthKey()">Activate Access</button>
 </div>
 
-  <div id="termsModal" class="modal">
-    <div class="modal-content" style="max-height: 85vh; overflow-y: auto; text-align: left;">
-        <h2 style="color: #3b82f6; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 10px;">Terms of Use & Privacy Policy</h2>
-        
-        <section style="margin-bottom: 20px;">
-            <h4 style="color: #22c55e;">🛡️ The Privacy Story (How it works)</h4>
-            <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">
-                When you click "Register," this app doesn't save your photo. Instead, the AI looks at the geometry of your face,the distance between eyes, the curve of your jaw and converts it into a <strong>128-bit mathematical vector</strong>. It will relate the next capture to the stored geometric features and records the individual entrance/exit. 
-                <br><br>
-                Think of it like a digital fingerprint made of numbers. Even if someone stole the database, they couldn't see your face; they would only see a list of random numbers.
-            </p>
-        </section>
-
-        
-
-        <section style="font-size: 13px; color: #94a3b8; line-height: 1.5;">
-            <h4 style="color: white; border-bottom: 1px solid #334155;">1. DATA LOCALITY</h4>
-            <p>All biometric descriptors and attendance logs are stored strictly in the browser's <strong>IndexedDB</strong> on this specific device. No data is sent to the cloud, Google, or any external server.</p>
-
-            <h4 style="color: white; border-bottom: 1px solid #334155;">2. USER CONSENT</h4>
-            <p>The Administrator (main user) of this device is responsible for obtaining explicit consent from all individuals before registering their facial data. Use of this system for unauthorized surveillance is strictly prohibited.</p>
-
-            <h4 style="color: white; border-bottom: 1px solid #334155;">3. ACCURACY & LIMITATIONS</h4>
-            <p>While the ACSOL AI is highly advanced, factors such as extreme lighting, face masks, or identical twins may affect recognition accuracy. The system is provided "as is" without a 100% accuracy guarantee. It uses 10 minutes interval to record the same person consecutively to avoid unnecessary repeated records and  overcrowding the database</p>
-
-            <h4 style="color: white; border-bottom: 1px solid #334155;">4. TRIAL & ACTIVATION</h4>
-            <p>This software operates on a 7-day trial basis. After expiration, the system will lock and require an activation code obtained from the authorized developer via WhatsApp (+256754010923), .</p>
-
-            <h4 style="color: white; border-bottom: 1px solid #334155;">5. MASTER RESET</h4>
-            <p>The "Master Reset" tool in settings will permanently delete all logs and all biometric descriptors. Once deleted, this data cannot be recovered by the developer or the device owner.</p>
-        </section>
-
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #334155;">
-            <button onclick="closeModal('termsModal')" style="width: 100%; background: #22c55e;">I Accept & Understand</button>
-        </div>
-    </div>
-</div>
-  
-   <div id="recordsModal" class="modal" 
-     style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, 0.5) !important; backdrop-filter: blur(4px); align-items: center; justify-content: center; color-scheme: light dark;">
-    
-    <div class="modal-content" 
-         style="background: Canvas !important; color: CanvasText !important; border: 1px solid rgba(128,128,128,0.3) !important; padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: 500px; width: 90%; margin: auto; margin-top: 10vh;">
-        
-        <h3 style="margin-top:0; color: #3b82f6 !important;">Attendance Database</h3>
-        
-        <div class="search-box" style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="searchInput" placeholder="Search person's name..." 
-                   style="background: Field !important; color: FieldText !important; border: 1px solid rgba(128,128,128,0.5) !important; text-align: left; flex: 1; padding: 8px; border-radius: 4px;">
-            <button style="width: 80px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="searchPerson()">Search</button>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <label style="font-size: 12px; opacity: 0.7;">Filter by Date:</label>
-            <button style="width: auto; padding: 4px 10px; font-size: 11px; background: rgba(128,128,128,0.2); color: CanvasText; border: 1px solid rgba(128,128,128,0.3); border-radius: 4px;" onclick="loadAttendance()">Show All Today</button>
-        </div>
-
-        <input type="date" id="dateFilter" onchange="loadAttendance()" 
-               style="background: Field !important; color: FieldText !important; border: 1px solid rgba(128,128,128,0.5) !important; width: 100%; margin-bottom: 15px; padding: 8px; border-radius: 4px;">
-        
-        <div class="record-list" id="modalLogs" 
-             style="height: 300px; overflow-y: auto; background: rgba(128,128,128,0.08) !important; padding: 10px; border-radius: 8px; border: 1px solid rgba(128,128,128,0.2) !important;">
-             </div>
-
-        <button class="btn-secondary" style="width: 100%; margin-top: 15px; background: #475569; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;" onclick="closeModal('recordsModal')">Close</button>
+<div id="optionsMenu">
+    <div class="menu-box">
+        <h3 id="menuTitle">Options</h3>
+        <button class="btn-blue" id="optRename">✏️ Rename</button>
+        <button class="btn-blue" id="optDownload">📥 Download</button>
+        <button class="btn-green" id="optShare">📤 Share</button>
+        <button class="btn-red" id="optDelete">🗑️ Delete</button>
+        <button class="btn-gray" id="optClose">❌ Close</button>
     </div>
 </div>
 
-    
-<div class="card">
-  <div class="mode-container">
-        <button id="entryBtn" class="mode-btn active-entry" onclick="setMode('ENTRY')">ENTERING</button>
-        <button id="exitBtn" class="mode-btn" onclick="setMode('EXIT')">EXITING</button>
-    </div>
-
-    <div id="status">Waking up AI...</div>
-    
-    <button id="toggleBtn" class="btn-sleep" onclick="toggleCamera()">Sleep Camera</button>
-    
-    <div style="margin: 20px 0; border-top: 1px solid #334155;"></div>
-    
-    <input type="text" id="nameInput" placeholder="Enter a new name and click Register">
-    
-    <div class="button-group">
-        <button id="regBtn" onclick="registerFace()">Register new face</button>
-        <button class="btn-secondary" onclick="openAttendanceWithAuth()">View attendance</button>
-   
-    </div>
-    <div>
-         <button class="btn-secondary" style="font-size: 11px;margin-top:15px" onclick="document.getElementById('termsModal').style.display='block'">📜 View Terms & Conditions</button>
-         </div>
-</div>
-
-
- 
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <h3 style="margin-top:0">System Settings</h3>
-            <div style="margin: 20px 0; border-top: 1px solid #334155; padding-top: 15px;">
-    <p style="color: #ef4444; font-size: 11px; margin-bottom: 8px; font-weight: bold;">DANGER ZONE</p>
-    <button onclick="clearAllData()" style="background: #ef4444; width: 100%;">Master Reset (Wipe All Faces & Logs)</button>
-</div>
-
-
-            <label>Company Name</label>
-            <input type="text" id="setCompanyName" placeholder="e.g. Acme Corp">
-           
-            <label>Access Password</label>
-            <input type="password" id="setPass" placeholder="New Password">
-            <button onclick="saveSettings()">Save & Close</button>
-            <button class="btn-secondary" style="margin-top:10px" onclick="closeModal('settingsModal')">Cancel</button>
+<div id="customAlert">
+    <div class="alert-content">
+        <p id="alertMsg"></p>
+        <div id="customInputArea" style="display:none;"><input type="text" id="uiTextInput"></div>
+        <div id="uiButtons"><button class="btn-blue" id="alertBtn">OK</button></div>
+        <div id="confirmGroup" style="display:none; gap:10px;">
+            <button class="btn-blue" id="confirmYes">Confirm</button>
+            <button class="btn-gray" id="confirmNo">Cancel</button>
         </div>
     </div>
+</div>
 
-    <script>
-        // TRIAL CONFIGURATION
-        const TRIAL_DAYS = 7;
-        const ACTIVATION_CODE = "ATTEND-2026-PRO";
+<div id="scrMain" class="screen active-screen">
+    <div class="box">
+        <h2>Business Registry</h2>
+        <div class="stats" id="dbCount">Records: 0</div>
+        <button class="btn-blue" onclick="showScreen('scrCamera')">📸 Camera Capture</button>
+        <button class="btn-green" onclick="showScreen('scrUpload')">📁 Upload Image</button>
+        <button class="btn-gray" onclick="showScreen('scrSearch')">🔍 Search Records</button>
+        <button class="btn-gray" onclick="showScreen('scrGallery')">🖼️ View Gallery</button>
+        <button class="btn-gray" onclick="showScreen('scrAdmin')">⚙️ Settings</button>
+    </div>
+</div>
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(() => console.log("Offline Mode Active"))
-                    .catch(err => console.log("Offline Sync Failed", err));
-            });
-        }
+<div id="scrCamera" class="screen">
+    <button class="btn-back" onclick="showScreen('scrMain')">← Back</button>
+    <div class="box">
+        <h3>Camera Capture</h3>
+        <input type="text" id="camName" placeholder="Full Name & details">
+        <video id="v" autoplay playsinline muted></video>
+        <button class="btn-blue" onclick="startCamera()">Start Camera</button>
+        <button class="btn-green" id="btnCaptureSave">Capture & Save</button>
+    </div>
+</div>
 
-        const video = document.getElementById('video');
-        const statusText = document.getElementById('status');
-        const toggleBtn = document.getElementById('toggleBtn');
-        const sleepMsg = document.getElementById('sleep-msg');
-        const captureOverlay = document.getElementById('capture-overlay');
-        const modalLogs = document.getElementById('modalLogs');
-        
-        let db;
-        let registeredFaces = [];
-        let isSleeping = false;
-        let scanInterval;
-        let currentMode = "ENTRY"; 
+<div id="scrUpload" class="screen">
+    <button class="btn-back" onclick="showScreen('scrMain')">← Back</button>
+    <div class="box">
+        <h3>Upload Record</h3>
+        <input type="text" id="upName" placeholder="Full Name & details">
+        <input type="file" id="filePicker" accept="image/*" style="display:none">
+        <button class="btn-green" onclick="document.getElementById('filePicker').click()">Pick Image</button>
+        <p id="upFileName" style="text-align:center; font-size:12px; color:#888;"></p>
+        <button class="btn-blue" id="btnSaveUpload" style="display:none;">Save Upload</button>
+    </div>
+</div>
 
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('entryBtn').className = mode === 'ENTRY' ? "mode-btn active-entry" : "mode-btn";
-            document.getElementById('exitBtn').className = mode === 'EXIT' ? "mode-btn active-exit" : "mode-btn";
-            statusText.innerText = "SCANNER SET TO " + mode;
-        }
+<div id="scrSearch" class="screen">
+    <button class="btn-back" onclick="showScreen('scrMain')">← Back</button>
+    <div class="box">
+        <h3>Search</h3>
+        <input type="text" id="searchQuery" list="nameList" placeholder="Search name...">
+        <datalist id="nameList"></datalist>
+        <button class="btn-blue" id="btnSearch">Find Record</button>
+        <div id="searchResult" class="viewer-container" style="display:none;"></div>
+    </div>
+</div>
 
-        async function init() {
-            const savedName = localStorage.getItem('companyName') || "AI Attendance System";
-            document.getElementById('displayCompanyName').innerText = savedName;
-            document.getElementById('setCompanyName').value = savedName;
+<div id="scrGallery" class="screen">
+    <button class="btn-back" onclick="showScreen('scrMain')">← Back</button>
+    <div class="box">
+        <h3>Gallery</h3>
+        <div id="galleryGrid"></div>
+        <div id="galleryViewer" class="viewer-container" style="display:none;"></div>
+    </div>
+</div>
 
-            // UPDATED DB SCHEMA TO INCLUDE SETTINGS
-            const request = indexedDB.open("FaceTrackerDB", 3);
-            request.onupgradeneeded = (e) => {
-                db = e.target.result;
-                if(!db.objectStoreNames.contains("members")) db.createObjectStore("members", { keyPath: "name" });
-                if(!db.objectStoreNames.contains("attendance")) db.createObjectStore("attendance", { autoIncrement: true });
-                if(!db.objectStoreNames.contains("settings")) db.createObjectStore("settings", { keyPath: "key" });
-            };
-            request.onsuccess = (e) => {
-                db = e.target.result;
-                handleTrialSystem().then(() => {
-                    loadModelsAndData();
-                });
-            };
-        }
-// Simplified state variables
-let capturedDescriptors = [];
-const TOTAL_SAMPLES = 5; 
+<div id="scrAdmin" class="screen">
+    <button class="btn-back" onclick="showScreen('scrMain')">← Back</button>
+    <div class="box">
+        <h3>Admin Tools</h3>
+        <button class="btn-gray" id="btnExport">Export Data (JSON)</button>
+        <button class="btn-gray" onclick="document.getElementById('fileImport').click()">Combine Data</button>
+        <input type="file" id="fileImport" style="display:none" accept=".json">
+    </div>
+</div>
 
-async function registerFace() {
-    const name = document.getElementById('nameInput').value.trim();
-    if (!name) return showAlert("Please enter a name first!");
+<div class="legal-footer">
+    <marquee></marquee>
+</div>
 
-    // Stop the normal scanning loop
-    if (typeof scanInterval !== 'undefined') clearInterval(scanInterval);
-    
-    const progress = document.getElementById('reg-progress');
-    const guide = document.getElementById('angle-guide');
-    
-    let captures = 0;
-    capturedDescriptors = [];
+<script>
+    let db, activeRecord = null, uploadedData = null;
 
-    // UI Reset
-    guide.innerText = "LOOK DIRECTLY AT CAMERA";
-    guide.style.display = "block";
-    progress.style.width = "0%";
-
-    const regInterval = setInterval(async () => {
-        // We only need Landmarks for the Pose check and Descriptor for the data
-        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-
-        if (detection) {
-            const landmarks = detection.landmarks;
-            const nose = landmarks.getNose()[0];
-            const leftEye = landmarks.getLeftEye()[0];
-            const rightEye = landmarks.getRightEye()[0];
-
-            // Calculate Yaw (Center check)
-            const yaw = (leftEye.x + rightEye.x) / 2 - nose.x;
-            const poseValue = Math.abs(yaw / 100);
-
-            // Capture only if the user is looking relatively straight (Threshold: 0.2)
-            if (poseValue < 0.2) {
-                capturedDescriptors.push(Array.from(detection.descriptor));
-                captures++;
-                
-                // Update UI
-                progress.style.width = (captures / TOTAL_SAMPLES) * 100 + "%";
-                guide.innerText = `CAPTURING... ${captures}/${TOTAL_SAMPLES}`;
-                
-                // Visual "shutter" feedback
-                video.style.filter = "brightness(1.5)";
-                setTimeout(() => video.style.filter = "none", 50);
-            } else {
-                guide.innerText = "PLEASE LOOK DIRECTLY AT CAMERA";
-            }
-        }
-
-        // Finish when we have enough samples
-        if (captures >= TOTAL_SAMPLES) {
-            clearInterval(regInterval);
-            guide.innerText = "SAVING...";
-            saveMultiAngleFace(name, capturedDescriptors);
-        }
-    }, 450); // Fast enough to be quick, slow enough for the user to react
-}
-
-async function saveMultiAngleFace(name, descriptors) {
-    try {
-        const tx = db.transaction("members", "readwrite");
-        const store = tx.objectStore("members");
-
-        // We store the name and the array of 5 descriptors
-        const memberData = { 
-            name: name, 
-            descriptors: descriptors,
-            registeredAt: new Date().toISOString() 
-        };
-
-        const request = store.put(memberData);
-
-        request.onsuccess = () => {
-            console.log(`Successfully registered ${name}`);
-        };
-
-        tx.oncomplete = async () => {
-            // Visual cleanup before the alert
-            const guide = document.getElementById('angle-guide');
-            const progress = document.getElementById('reg-progress');
-            if (guide) guide.style.display = "none";
-            if (progress) progress.style.width = "0%";
-
-            await showAlert(`${name} registered successfully!`, "Success!");
-            
-            // Reload to refresh the FaceMatcher with the new data
-            location.reload();
-        };
-
-        tx.onerror = (err) => {
-            console.error("Database Error:", err);
-            showAlert("Failed to save to database.", "Error");
-        };
-
-    } catch (error) {
-        console.error("Transaction Error:", error);
-        showAlert("An unexpected error occurred.", "Error");
+    // --- SHORT KEY PERPETUAL LOGIC ---
+    function getExpectedKey() {
+        const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        const d = new Date();
+        const shortMonth = months[d.getMonth()];
+        const shortYear = d.getFullYear().toString().substr(-2); // Gets '26' or '27'
+        return shortMonth + shortYear; // e.g., "FEB26"
     }
-}
 
-
-        // TRIAL LOGIC FUNCTIONS
-        async function handleTrialSystem() {
-            const getSetting = (key) => new Promise(r => {
-                const req = db.transaction("settings", "readonly").objectStore("settings").get(key);
-                req.onsuccess = () => r(req.result);
-            });
-
-            const putSetting = (key, value) => new Promise(r => {
-                const req = db.transaction("settings", "readwrite").objectStore("settings").put({ key, value });
-                req.oncomplete = () => r();
-            });
-
-            const activationRecord = await getSetting('is_activated');
-            if (activationRecord && activationRecord.value === true) return;
-
-            let installRecord = await getSetting('install_date');
-            if (!installRecord) {
-                const now = Date.now();
-                await putSetting('install_date', now);
-                installRecord = { value: now };
-            }
-
-            const expiryTime = installRecord.value + (TRIAL_DAYS * 24 * 60 * 60 * 1000);
-            const currentTime = Date.now();
-
-            if (currentTime > expiryTime) {
-                document.getElementById('expiryLock').style.display = 'flex';
-                document.getElementById('userRequestID').innerText = "AM-" + installRecord.value.toString().slice(-4);
-                stopCamera();
-            } else {
-                const diff = expiryTime - currentTime;
-                const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
-                const badge = document.getElementById('trialBadge');
-                badge.style.display = 'block';
-                document.getElementById('daysLeft').innerText = daysLeft;
-            }
+    function checkSubscription() {
+        const expected = getExpectedKey();
+        const saved = localStorage.getItem("monthly_active_key");
+        if (saved !== expected) {
+            document.getElementById('lockScreen').style.display = 'flex';
         }
+    }
 
-        async function checkUnlockCode() {
-            const input = document.getElementById('unlockCodeInput').value;
-            if (input === ACTIVATION_CODE) {
-                const tx = db.transaction("settings", "readwrite");
-                tx.objectStore("settings").put({ key: 'is_activated', value: true });
-                tx.oncomplete = () => {
-                    document.getElementById('expiryLock').style.display = 'none';
-                    document.getElementById('trialBadge').style.display = 'none';
-                    startCamera();
-                    showAlert("System Activated Successfully!", "Success");
+    function validateMonthKey() {
+        const input = document.getElementById('monthKeyInput').value.trim().toUpperCase();
+        const expected = getExpectedKey();
+        if (input === expected) {
+            localStorage.setItem("monthly_active_key", input);
+            document.getElementById('lockScreen').style.display = 'none';
+            showUI("Success: Access Granted for " + expected);
+        } else {
+            showUI("Invalid Key. Contact +256764010923");
+        }
+    }
+
+    window.onload = checkSubscription;
+
+    // --- NAVIGATION ---
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+        document.getElementById(id).classList.add('active-screen');
+        if(id === 'scrGallery') {
+            document.getElementById('galleryViewer').style.display = "none";
+            document.getElementById('galleryGrid').style.display = "grid";
+            loadGallery();
+        }
+        if(id !== 'scrCamera') stopCamera();
+    }
+
+    // --- CUSTOM UI (NO PASSWORDS) ---
+    function showUI(msg, mode = 'alert') {
+        return new Promise((resolve) => {
+            const ui = document.getElementById('customAlert');
+            document.getElementById('alertMsg').innerText = msg;
+            document.getElementById('customInputArea').style.display = (mode === 'prompt') ? "block" : "none";
+            document.getElementById('uiButtons').style.display = (mode === 'alert') ? "block" : "none";
+            document.getElementById('confirmGroup').style.display = (mode !== 'alert') ? "flex" : "none";
+            ui.style.display = "flex";
+
+            document.getElementById('alertBtn').onclick = () => { ui.style.display = "none"; resolve(true); };
+            document.getElementById('confirmNo').onclick = () => { ui.style.display = "none"; resolve(null); };
+            document.getElementById('confirmYes').onclick = () => {
+                const val = (mode === 'prompt') ? document.getElementById('uiTextInput').value : true;
+                ui.style.display = "none";
+                resolve(val);
+            };
+        });
+    }
+
+    // --- DATABASE & ACTIONS ---
+    const request = indexedDB.open("BusinessDB5", 1);
+    request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains("students")) db.createObjectStore("students", { keyPath: "name" });
+    };
+    request.onsuccess = (e) => { db = e.target.result; updateUI(); };
+
+    document.getElementById('btnSearch').onclick = () => {
+        const q = document.getElementById('searchQuery').value.trim().toLowerCase();
+        if(!q) return;
+        db.transaction("students").objectStore("students").get(q).onsuccess = (e) => {
+            const res = e.target.result;
+            if (res) {
+                const r = document.getElementById('searchResult');
+                r.style.display = "block";
+                r.innerHTML = `<p><strong>${q.toUpperCase()}</strong></p><img src="${res.photo}" class="view-img"><br><button class="btn-blue" onclick="openOptions('${q}','${res.photo}')">Options</button>`;
+            } else { showUI("Record not found."); }
+        };
+    };
+
+    function loadGallery() {
+        const g = document.getElementById('galleryGrid'); g.innerHTML = "";
+        db.transaction("students").objectStore("students").openCursor().onsuccess = (e) => {
+            const cur = e.target.result;
+            if (cur) {
+                const n = cur.value.name, p = cur.value.photo;
+                const img = document.createElement('img'); img.src = p; img.className = 'gallery-item';
+                img.onclick = () => {
+                    g.style.display = "none";
+                    const v = document.getElementById('galleryViewer');
+                    v.style.display = "block";
+                    v.innerHTML = `<p><strong>${n.toUpperCase()}</strong></p><img src="${p}" class="view-img"><br><button class="btn-blue" onclick="openOptions('${n}','${p}')">Options</button>`;
                 };
-            } else {
-                showAlert("Invalid activation code.", "Error");
+                g.appendChild(img); cur.continue();
             }
-        }
-
-        async function loadModelsAndData() {
-            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-            try {
-                statusText.innerText = "Initializing AI Models...";
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-                ]);
-                await loadFacesFromDB();
-                statusText.innerText = "System Ready.";
-                startCamera();
-            } catch (err) { statusText.innerText = "Load Error: " + err.message; }
-        }
-
-        function startCamera() {
-            if (document.getElementById('expiryLock').style.display === 'flex') return;
-            navigator.mediaDevices.getUserMedia({ video: {} }).then(stream => { 
-                video.srcObject = stream;
-                video.style.display = "block";
-                sleepMsg.style.display = "none";
-                statusText.innerText = "SCANNING FOR " + currentMode + "...";
-                if (scanInterval) clearInterval(scanInterval);
-                scanInterval = setInterval(scanFace, 2000); 
-            }).catch(err => { statusText.innerText = "Camera Access Denied"; });
-        }
-
-        function stopCamera() {
-            const stream = video.srcObject;
-            if (stream) stream.getTracks().forEach(t => t.stop());
-            video.srcObject = null;
-            video.style.display = "none";
-            sleepMsg.style.display = "block";
-            clearInterval(scanInterval);
-            statusText.innerText = "Camera is OFF";
-        }
-
-        function toggleCamera() {
-            isSleeping ? startCamera() : stopCamera();
-            toggleBtn.innerText = isSleeping ? "Sleep Camera" : "Wake Camera";
-            toggleBtn.className = isSleeping ? "btn-sleep" : "btn-wake";
-            isSleeping = !isSleeping;
-        }
-
-        async function loadFacesFromDB() {
-    const tx = db.transaction("members", "readonly");
-    const store = tx.objectStore("members");
-    
-    const members = await new Promise(r => {
-        store.getAll().onsuccess = e => r(e.target.result);
-    });
-
-    // Check if we actually have members
-    if (members.length === 0) {
-        console.log("No registered faces found in DB.");
-        return [];
+        };
     }
 
-    registeredFaces = members.map(m => {
-        // m.descriptors is the array of 5 captures we saved earlier
-        // We must convert each individual capture back into a Float32Array
-        const faceVectors = m.descriptors.map(d => new Float32Array(d));
-        
-        return new faceapi.LabeledFaceDescriptors(m.name, faceVectors);
-    });
+    function openOptions(n, p) { activeRecord = { name: n, photo: p }; document.getElementById('menuTitle').innerText = n.toUpperCase(); document.getElementById('optionsMenu').style.display = 'flex'; }
 
-    console.log(`Loaded ${registeredFaces.length} facial profiles.`);
-}
+    document.getElementById('optClose').onclick = () => {
+        document.getElementById('optionsMenu').style.display = 'none';
+        document.getElementById('searchResult').style.display = "none";
+        document.getElementById('galleryViewer').style.display = "none";
+        document.getElementById('galleryGrid').style.display = "grid";
+    };
 
-function toggleTheme() {
-    const body = document.body;
-    const btn = document.getElementById('themeToggle');
-    
-    body.classList.toggle('light-theme');
-    
-    const isLight = body.classList.contains('light-theme');
-    btn.innerText = isLight ? "☀️" : "🌙";
-    
-    // Save preference
-    localStorage.setItem('theme', isLight ? 'light' : 'dark');
-}
-
-// Add this to your init() function so it loads the saved theme
-function applySavedTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-        document.body.classList.add('light-theme');
-        document.getElementById('themeToggle').innerText = "☀️";
-    }
-}
-
-        async function scanFace() {
-            if (registeredFaces.length === 0 || isSleeping) return;
-            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-
-            if (detection) {
-                const faceMatcher = new faceapi.FaceMatcher(registeredFaces, 0.55);
-                const match = faceMatcher.findBestMatch(detection.descriptor);
-
-                if (match.label !== 'unknown') {
-                    clearInterval(scanInterval); 
-                    showCapturedUI(match.label);
-                    saveAttendance(match.label);
-                    setTimeout(() => { if (!isSleeping) scanInterval = setInterval(scanFace, 2000); }, 5000);
-                }
-            }
+    document.getElementById('optDelete').onclick = async () => {
+        const conf = await showUI("Delete " + activeRecord.name.toUpperCase() + "?", 'confirm');
+        if(conf) {
+            db.transaction("students", "readwrite").objectStore("students").delete(activeRecord.name).oncomplete = () => {
+                updateUI(); document.getElementById('optClose').click(); showUI("Deleted.");
+            };
         }
+    };
 
-        function showCapturedUI(name) {
-            captureOverlay.innerHTML = `
-                <div style="font-size: 16px; letter-spacing: 1px;">${currentMode} VERIFIED</div>
-                <div style="font-size: 20px; margin: 5px 0;">${name.toUpperCase()}</div>
-                <div id="countdown-wrapper" style="font-size: 12px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 5px;">
-                    Next scan in <span id="timer-num">5</span>s
-                </div>
-            `;
-            
-            captureOverlay.style.background = currentMode === "ENTRY" ? "rgba(34, 197, 94, 0.95)" : "rgba(239, 68, 68, 0.95)";
-            captureOverlay.style.display = "block";
-
-            let timeLeft = 5;
-            const timerInterval = setInterval(() => {
-                timeLeft--;
-                const timerNum = document.getElementById('timer-num');
-                if (timerNum) timerNum.innerText = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    captureOverlay.style.display = "none";
-                }
-            }, 1000);
+    document.getElementById('optRename').onclick = async () => {
+        const newN = await showUI("New name:", 'prompt');
+        if(newN) {
+            const tx = db.transaction("students", "readwrite");
+            const store = tx.objectStore("students");
+            store.delete(activeRecord.name);
+            store.put({ name: newN.toLowerCase(), photo: activeRecord.photo });
+            tx.oncomplete = () => { updateUI(); document.getElementById('optClose').click(); showUI("Renamed!"); };
         }
+    };
 
-async function clearAllData() {
-    // 1. Security Check
-    const pass = localStorage.getItem('sysPass') || "";
-    const entry = await showAlert("WARNING: This will delete ALL attendance logs AND ALL registered faces. Enter Admin Password:", "Master Reset", "prompt");
-    
-    if (entry === pass) {
+    document.getElementById('optDownload').onclick = () => {
+        const a = document.createElement('a'); a.href = activeRecord.photo;
+        a.download = activeRecord.name + ".jpg"; a.click();
+    };
+
+    document.getElementById('optShare').onclick = async () => {
         try {
-            // We open a transaction for both stores
-            const tx = db.transaction(["attendance", "members"], "readwrite");
-            
-            // Clear logs
-            tx.objectStore("attendance").clear();
-            // Clear faces
-            tx.objectStore("members").clear();
-            
-            tx.oncomplete = async () => {
-                await showAlert("All data wiped. The system is now empty.", "System Reset");
-                // Reset local variables
-                registeredFaces = [];
-                // Reload to ensure the FaceMatcher is empty and UI is fresh
-                location.reload();
-            };
+            const blob = await (await fetch(activeRecord.photo)).blob();
+            const file = new File([blob], activeRecord.name + ".jpg", {type:"image/jpeg"});
+            if(navigator.share) await navigator.share({files: [file]});
+        } catch(e) { showUI("Share failed."); }
+    };
 
-            tx.onerror = (err) => {
-                showAlert("Error during reset: " + err.message, "System Error");
-            };
-        } catch (err) {
-            showAlert("Error accessing database: " + err.message, "System Error");
-        }
-    } else if (entry !== null) {
-        showAlert("Incorrect password. No data was deleted.", "Access Denied");
+    // Camera, Save, and Update functions
+    const v = document.getElementById('v');
+    async function startCamera() {
+        try { v.srcObject = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); } catch(e) { showUI("Camera error."); }
     }
+    function stopCamera() { if (v.srcObject) v.srcObject.getTracks().forEach(t => t.stop()); }
+    document.getElementById('btnCaptureSave').onclick = () => {
+        const name = document.getElementById('camName').value.trim().toLowerCase();
+        if(!name || !v.srcObject) return showUI("Missing data.");
+        const canvas = document.createElement('canvas');
+        canvas.width = 500; canvas.height = (v.videoHeight/v.videoWidth)*500;
+        canvas.getContext('2d').drawImage(v, 0, 0, canvas.width, canvas.height);
+        saveRecord(name, canvas.toDataURL('image/jpeg', 0.6));
+    };
+
+    document.getElementById('filePicker').onchange = (e) => {
+        const r = new FileReader();
+        r.onload = (ev) => { uploadedData = ev.target.result; document.getElementById('upFileName').innerText = e.target.files[0].name; document.getElementById('btnSaveUpload').style.display='block'; };
+        r.readAsDataURL(e.target.files[0]);
+    };
+    document.getElementById('btnSaveUpload').onclick = () => {
+        const name = document.getElementById('upName').value.trim().toLowerCase();
+        if(name && uploadedData) saveRecord(name, uploadedData);
+    };
+
+    function saveRecord(name, photo) {
+        const tx = db.transaction("students", "readwrite");
+        tx.objectStore("students").put({ name, photo });
+        tx.oncomplete = () => { updateUI(); showScreen('scrMain'); showUI("Saved!"); };
+    }
+
+    document.getElementById('btnExport').onclick = () => {
+        db.transaction("students").objectStore("students").getAll().onsuccess = (e) => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(e.target.result)], {type:"application/json"}));
+            a.download = "Backup.json"; a.click();
+        };
+    };
+
+    function updateUI() {
+        if(!db) return;
+        let count = 0; const list = document.getElementById('nameList'); list.innerHTML = "";
+        db.transaction("students").objectStore("students").openCursor().onsuccess = (e) => {
+            const cur = e.target.result;
+            if (cur) { count++; let o = document.createElement('option'); o.value = cur.value.name; list.appendChild(o); cur.continue(); }
+            document.getElementById('dbCount').innerText = `Records: ${count}`;
+        };
+    }
+    
+    // --- SERVICE WORKER REGISTRATION ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registered'))
+            .catch(err => console.log('Service Worker registration failed', err));
+    });
 }
 
-        function saveAttendance(name) {
-            const now = new Date();
-            const dateKey = now.toISOString().split('T')[0];
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            const lastLog = localStorage.getItem('last_log_' + name + currentMode);
-            if (lastLog && (now - new Date(lastLog)) < 600000) return; 
-
-            const tx = db.transaction("attendance", "readwrite");
-            tx.objectStore("attendance").add({ name, date: dateKey, time: timeStr, status: currentMode, timestamp: now });
-            tx.oncomplete = () => {
-                localStorage.setItem('last_log_' + name + currentMode, now);
-                statusText.innerHTML = `✅ ${currentMode}: <b>${name}</b> at ${timeStr}`;
-            };
-        }
-
-        function showAlert(message, title = "System Notification", type = "alert") {
-            return new Promise((resolve) => {
-                const overlay = document.getElementById('customAlert');
-                const titleEl = document.getElementById('alertTitle');
-                const msgEl = document.getElementById('alertMessage');
-                const inputContainer = document.getElementById('alertInputContainer');
-                const inputField = document.getElementById('alertInput');
-                const confirmBtn = document.getElementById('alertConfirmBtn');
-                const cancelBtn = document.getElementById('alertCancelBtn');
-
-                titleEl.innerText = title;
-                msgEl.innerText = message;
-                inputContainer.style.display = type === "prompt" ? "block" : "none";
-                cancelBtn.style.display = type === "prompt" ? "block" : "none";
-                inputField.value = "";
-                overlay.style.display = "flex";
-
-                confirmBtn.onclick = () => { overlay.style.display = "none"; resolve(type === "prompt" ? inputField.value : true); };
-                cancelBtn.onclick = () => { overlay.style.display = "none"; resolve(null); };
-            });
-        }
-
-        
-        async function openAttendanceWithAuth() {
-            const pass = localStorage.getItem('sysPass') || "";
-            const entry = await showAlert("Enter Access Password:", "Security Check", "prompt");
-            if (entry === pass) {
-                document.getElementById('recordsModal').style.display = 'block';
-                document.getElementById('dateFilter').valueAsDate = new Date();
-                loadAttendance();
-            } else if (entry !== null) showAlert("Incorrect password.", "Access Denied");
-        }
-
-        async function openSettings() {
-            const pass = localStorage.getItem('sysPass') || "";
-            const entry = await showAlert("Enter Admin Password:", "Settings Lock", "prompt");
-            if(entry === pass) document.getElementById('settingsModal').style.display = 'block';
-        }
-
-        async function saveSettings() {
-            const newName = document.getElementById('setCompanyName').value;
-            const newPass = document.getElementById('setPass').value;
-            if(newName) {
-                localStorage.setItem('companyName', newName);
-                document.getElementById('displayCompanyName').innerText = newName;
-            }
-            if(newPass) localStorage.setItem('sysPass', newPass);
-            await showAlert("System settings updated.", "Saved");
-            closeModal('settingsModal');
-        }
-
-        async function searchPerson() {
-            const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            if(!query) return showAlert("Enter a name to search");
-            const tx = db.transaction("attendance", "readonly");
-            const records = await new Promise(r => tx.objectStore("attendance").getAll().onsuccess = e => r(e.target.result));
-            const filtered = records.filter(r => r.name.toLowerCase().includes(query));
-            renderList(filtered, `No results for: ${query}`);
-        }
-
-        async function loadAttendance() {
-            const date = document.getElementById('dateFilter').value;
-            const tx = db.transaction("attendance", "readonly");
-            const records = await new Promise(r => tx.objectStore("attendance").getAll().onsuccess = e => r(e.target.result));
-            const filtered = records.filter(r => r.date === date);
-            renderList(filtered);
-        }
-
-        function renderList(data, emptyMsg = "No records found") {
-            modalLogs.innerHTML = "";
-            if (data.length === 0) {
-                modalLogs.innerHTML = `<div style='color:gray; text-align:center; padding:20px;'>${emptyMsg}</div>`;
-                return;
-            }
-            data.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-            data.forEach(r => {
-                const div = document.createElement('div');
-                div.className = "record-item";
-                const statusColor = r.status === "ENTRY" ? "#22c55e" : "#ef4444";
-                div.innerHTML = `
-                    <span>👤 ${r.name} <small style="color:${statusColor}; font-weight:bold;">[${r.status}]</small></span> 
-                    <span>🕒 ${r.time}</span>
-                `;
-                modalLogs.appendChild(div);
-            });
-        }
-
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        init();
-    </script>
-
-    <div id="customAlert" class="custom-alert-overlay">
-        <div class="custom-alert-box">
-            <h3 id="alertTitle">Notification</h3>
-            <p id="alertMessage"></p>
-            <div id="alertInputContainer" style="display: none;">
-                <input type="password" id="alertInput" placeholder="Enter here...">
-            </div>
-            <div class="button-group">
-                <button id="alertConfirmBtn">OK</button>
-                <button id="alertCancelBtn" class="btn-secondary" style="display: none;">Cancel</button>
-            </div>
-        </div>
-    </div>
+</script>
 </body>
 </html>
-
-
-
